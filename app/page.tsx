@@ -21,7 +21,7 @@ export default function LoginPage() {
         <h1 className="brand">ConectAr</h1>
         <p className="tagline">GESTIÓN HUMANA, CONECTADA</p>
 
-        <form onSubmit={handleSubmit} className="form">
+        <form onSubmit={handleSubmit} className="form" noValidate>
           <label htmlFor="email">EMAIL</label>
           <input
             id="email"
@@ -42,10 +42,19 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
             />
-            <button type="button" onClick={() => setShowPassword((value) => !value)}>
+            <button
+              className="toggle-password"
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
               {showPassword ? 'Ocultar' : 'Ver'}
             </button>
           </div>
+
+          <button type="button" className="forgot-password">
+            ¿Olvidé mi contraseña?
+          </button>
 
           <button type="submit" disabled={disabled} className="submit-btn">
             Iniciar Sesión
