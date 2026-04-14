@@ -69,11 +69,36 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const handleLogout = async () => {
+    console.log('[AppShell] Iniciando logout...');
+
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      // Primero, limpiar sessionStorage del lado del cliente
+      console.log('[AppShell] Limpiando sessionStorage...');
+      logout();
+
+      // Luego, llamar al API para eliminar la cookie
+      console.log('[AppShell] Llamando API logout...');
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        console.warn('[AppShell] Logout API retornó status:', response.status);
+      } else {
+        console.log('[AppShell] Logout API exitosa');
+      }
+
+      // Agregar un pequeño delay para asegurar que la cookie se elimine
+      // antes de que el router intente navegar
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Finalmente, redirigir a login
+      console.log('[AppShell] Redirigiendo a /login...');
+      router.push('/login');
+
     } catch (error) {
-      console.error('[Logout] Error:', error);
-    } finally {
+      console.error('[AppShell] Error en logout:', error);
+      // Aun así redirigir a login en caso de error
       logout();
       router.push('/login');
     }
