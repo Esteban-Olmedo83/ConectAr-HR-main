@@ -26,17 +26,42 @@ export default function LoginPage() {
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
+    console.log('[Login] Iniciando autenticación con:', email);
 
     try {
+      console.log('[Login] Enviando solicitud a /api/auth/login');
+
+      // Fetch con timeout de 10 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       });
 
-      const data = await response.json();
+      clearTimeout(timeoutId);
+      console.log('[Login] Respuesta recibida. Status:', response.status);
+
+      let data;
+      try {
+        data = await response.json();
+        console.log('[Login] JSON parseado:', { success: data.success, error: data.error });
+      } catch (jsonError) {
+        console.error('[Login] Error parseando JSON:', jsonError);
+        setLoading(false);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Respuesta inválida del servidor',
+        });
+        return;
+      }
 
       if (!response.ok) {
+        console.warn('[Login] Autenticación fallida:', data.error);
         setLoading(false);
         toast({
           variant: 'destructive',
@@ -46,6 +71,7 @@ export default function LoginPage() {
         return;
       }
 
+      console.log('[Login] Autenticación exitosa, guardando sesión');
       setSession({
         userId: data.user.userId,
         userName: data.user.userName,
@@ -58,15 +84,25 @@ export default function LoginPage() {
         description: data.user.userName,
       });
 
+      console.log('[Login] Redirigiendo a:', data.redirect || '/dashboard');
       router.push(data.redirect || '/dashboard');
-    } catch (error) {
-      console.error('[Login] Error:', error);
+    } catch (error: any) {
+      console.error('[Login] Excepción capturada:', error?.name, error?.message);
       setLoading(false);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No se pudo conectar',
-      });
+
+      if (error?.name === 'AbortError') {
+        toast({
+          variant: 'destructive',
+          title: 'Timeout',
+          description: 'La solicitud tardó demasiado. Intenta de nuevo.',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'No se pudo conectar',
+        });
+      }
     }
   };
 
