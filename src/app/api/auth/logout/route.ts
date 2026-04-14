@@ -16,7 +16,9 @@ export async function POST(request: NextRequest) {
     
     if (sessionCookie) {
       try {
-        const session = JSON.parse(sessionCookie.value);
+        // La cookie está codificada en Base64, decodificar antes de parsear
+        const decodedSession = atob(sessionCookie.value);
+        const session = JSON.parse(decodedSession);
         userId = session.userId || 'unknown';
         userName = session.userName || 'unknown';
       } catch {
