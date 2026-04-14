@@ -75,21 +75,32 @@ export function AppShell({ children }: { children: ReactNode }) {
       // Primero, limpiar sessionStorage del lado del cliente
       console.log('[AppShell] Limpiando sessionStorage...');
       logout();
+      console.log('[AppShell] SessionStorage limpiado');
 
       // Luego, llamar al API para eliminar la cookie
       console.log('[AppShell] Llamando API logout...');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+      console.log('[AppShell] Logout API retornó status:', response.status);
+
       if (!response.ok) {
-        console.warn('[AppShell] Logout API retornó status:', response.status);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.warn('[AppShell] Logout API error:', response.status, errorData);
       } else {
-        console.log('[AppShell] Logout API exitosa');
+        const responseData = await response.json().catch(() => ({}));
+        console.log('[AppShell] Logout API exitosa:', responseData);
       }
 
       // Agregar un pequeño delay para asegurar que la cookie se elimine
       // antes de que el router intente navegar
+      console.log('[AppShell] Esperando 100ms antes de redirigir...');
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Finalmente, redirigir a login
@@ -97,8 +108,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       router.push('/login');
 
     } catch (error) {
-      console.error('[AppShell] Error en logout:', error);
+      console.error('[AppShell] Error en logout:', error instanceof Error ? error.message : String(error));
+      console.error('[AppShell] Stack trace:', error instanceof Error ? error.stack : 'N/A');
+
       // Aun así redirigir a login en caso de error
+      console.log('[AppShell] Forzando logout local y redirección a login');
       logout();
       router.push('/login');
     }
