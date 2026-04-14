@@ -188,5 +188,33 @@ export function logout(): void {
   return sessionManager.clearSession();
 }
 
+/**
+ * Extiende el TTL de una sesión en 4 horas
+ * Usado por refresh-session para renovar la cookie sin re-autenticación
+ */
+export function extendSessionCookie(session: SessionPayload): string {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 4 * 60 * 60 * 1000); // 4 horas
+
+  const extendedSession: SessionPayload = {
+    ...session,
+    lastActivityAt: now.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+  };
+
+  // Codificar en Base64
+  return btoa(JSON.stringify(extendedSession));
+}
+
+/**
+ * Registra una sesión activa (para auditoría)
+ * En futuro puede conectarse a base de datos de sesiones
+ */
+export function trackActiveSession(session: SessionPayload): void {
+  // Actualmente es un no-op en producción
+  // En futuro: registrar en base de datos o cache (Redis)
+  console.log(`[Session] Sesión activa tracked para usuario: ${session.userId}, expira en: ${session.expiresAt}`);
+}
+
 // Exportar tipo Session para uso en otros archivos
 export type { Session };

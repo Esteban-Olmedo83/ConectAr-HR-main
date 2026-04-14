@@ -20,7 +20,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const session = getSession();
-    if (session.role !== 'owner') {
+    if (!session || session.role !== 'owner') {
       router.replace('/login');
     } else {
       setIsAuthorized(true);

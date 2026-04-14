@@ -22,6 +22,7 @@ import { getSession, logout, Session } from '@/lib/session';
 import { mockEmployees } from '@/lib/mock-data';
 import { MainNav } from '@/components/main-nav';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useSessionValidation } from '@/hooks/useSessionValidation';
 
 // Logo desde public folder
 const LOGO_WORDMARK_SRC = '/logotipo-conectar-transparent.png';
@@ -32,6 +33,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+
+  // Validate local session state every 30 s; redirect to /login on desync
+  useSessionValidation();
 
   const isGeneralManager = useMemo(() => {
     if (!session || session.role !== 'manager') return false;
@@ -99,9 +103,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
 
       // Agregar un pequeño delay para asegurar que la cookie se elimine
-      // antes de que el router intente navegar
-      console.log('[AppShell] Esperando 100ms antes de redirigir...');
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // completamente antes de que el router intente navegar
+      console.log('[AppShell] Esperando 150ms antes de redirigir...');
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Finalmente, redirigir a login
       console.log('[AppShell] Redirigiendo a /login...');

@@ -25,6 +25,11 @@
 const RATE_LIMITS_KEY = 'rate_limits';
 const RATE_LIMITS_META_KEY = 'rate_limits_meta';
 
+// En servidor: almacenar en memoria (nota: perdido en reinicio)
+// En producción: usar Redis o similar
+const SERVER_RATE_LIMITS: Record<string, number> = {};
+const SERVER_RATE_LIMITS_META: Record<string, RateLimitMeta> = {};
+
 /**
  * Configuración de límites por endpoint.
  * `max` = intentos máximos antes de bloquear.
@@ -70,9 +75,12 @@ function buildKey(ip: string, endpoint: string): string {
   return `${ip}:${endpoint}:${today}`;
 }
 
-/** Lee el mapa de conteos desde localStorage (server-safe). */
+/** Lee el mapa de conteos (cliente o servidor). */
 function readCounts(): RateLimitCounts {
-  if (typeof window === 'undefined') return {};
+  if (typeof window === 'undefined') {
+    // Servidor: leer desde mapa en memoria
+    return { ...SERVER_RATE_LIMITS };
+  }
   try {
     const raw = localStorage.getItem(RATE_LIMITS_KEY);
     return raw ? (JSON.parse(raw) as RateLimitCounts) : {};
@@ -81,9 +89,13 @@ function readCounts(): RateLimitCounts {
   }
 }
 
-/** Persiste el mapa de conteos en localStorage. */
+/** Persiste el mapa de conteos (cliente o servidor). */
 function writeCounts(counts: RateLimitCounts): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    // Servidor: escribir a mapa en memoria
+    Object.assign(SERVER_RATE_LIMITS, counts);
+    return;
+  }
   try {
     localStorage.setItem(RATE_LIMITS_KEY, JSON.stringify(counts));
   } catch {
@@ -91,9 +103,12 @@ function writeCounts(counts: RateLimitCounts): void {
   }
 }
 
-/** Lee el mapa de metadatos desde localStorage. */
+/** Lee el mapa de metadatos (cliente o servidor). */
 function readMeta(): RateLimitMetaMap {
-  if (typeof window === 'undefined') return {};
+  if (typeof window === 'undefined') {
+    // Servidor: leer desde mapa en memoria
+    return { ...SERVER_RATE_LIMITS_META };
+  }
   try {
     const raw = localStorage.getItem(RATE_LIMITS_META_KEY);
     return raw ? (JSON.parse(raw) as RateLimitMetaMap) : {};
@@ -102,9 +117,13 @@ function readMeta(): RateLimitMetaMap {
   }
 }
 
-/** Persiste el mapa de metadatos en localStorage. */
+/** Persiste el mapa de metadatos (cliente o servidor). */
 function writeMeta(meta: RateLimitMetaMap): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    // Servidor: escribir a mapa en memoria
+    Object.assign(SERVER_RATE_LIMITS_META, meta);
+    return;
+  }
   try {
     localStorage.setItem(RATE_LIMITS_META_KEY, JSON.stringify(meta));
   } catch {

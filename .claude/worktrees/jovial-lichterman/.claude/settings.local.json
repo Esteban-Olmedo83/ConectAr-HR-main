@@ -14,7 +14,13 @@
       "Read(//tmp/**)",
       "Bash(npm run:*)",
       "Bash(awk '{print $2}')",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(node test-auth-endpoints.ts)",
+      "Bash(chmod +x \"/e/ConectAr HR/ConectAr-HR-clone/test-api-endpoints.sh\")",
+      "Bash(\"/e/ConectAr HR/ConectAr-HR-clone/test-api-endpoints.sh\")",
+      "Bash(node test-session-lifecycle.ts)"
     ]
   }
 }

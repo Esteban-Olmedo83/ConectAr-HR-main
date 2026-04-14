@@ -35,12 +35,12 @@ const LOCAL_KEY = 'conectar_comment_threads';
  */
 export function getCommentPermissions(): CommentPermissions {
   const session = getSession();
-  const isAdmin = session.role === 'admin' || session.role === 'owner';
+  const isAdmin = session && (session.role === 'admin' || session.role === 'owner');
 
   return {
-    canAdd: session.role !== 'guest',
-    canEdit: (authorId: string) => session.userId === authorId,
-    canDelete: (authorId: string) => isAdmin || session.userId === authorId,
+    canAdd: session ? session.role !== 'guest' : false,
+    canEdit: (authorId: string) => session ? session.userId === authorId : false,
+    canDelete: (authorId: string) => isAdmin ? true : (session ? session.userId === authorId : false),
   };
 }
 
@@ -112,7 +112,7 @@ export async function addComment(
   mentions: string[] = []
 ): Promise<Comment | null> {
   const session = getSession();
-  if (session.role === 'guest') return null;
+  if (!session || session.role === 'guest') return null;
 
   const now = new Date().toISOString();
   const comment: Comment = {
@@ -177,6 +177,7 @@ export async function editComment(
   newContent: string
 ): Promise<boolean> {
   const session = getSession();
+  if (!session) return false;
   const now = new Date().toISOString();
 
   if (isSupabaseConfigured) {
@@ -217,6 +218,7 @@ export async function deleteComment(
   commentId: string
 ): Promise<boolean> {
   const session = getSession();
+  if (!session) return false;
   const isAdmin = session.role === 'admin' || session.role === 'owner';
 
   if (isSupabaseConfigured) {
@@ -257,7 +259,7 @@ export async function toggleReaction(
   emoji: string
 ): Promise<CommentThread | null> {
   const session = getSession();
-  if (session.role === 'guest') return null;
+  if (!session || session.role === 'guest') return null;
 
   // Para simplificar, las reacciones siempre se maneja en localStorage
   // (Supabase requeriría una función RPC para el toggle atómico)

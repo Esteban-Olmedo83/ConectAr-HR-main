@@ -64,7 +64,7 @@ export function MainNav() {
   }
 
   const renderLink = (item: { href: string; label: string; icon: React.ElementType; adminOnly?: boolean; badge?: number }) => {
-    if (item.adminOnly && session.role !== 'admin') return null;
+    if (item.adminOnly && session && session.role !== 'admin') return null;
     
     // Si la ruta base coincide, está activo
     const isActive = pathname.startsWith(item.href) && (item.href !== '/my-portal' || pathname === '/my-portal');
@@ -102,7 +102,7 @@ export function MainNav() {
                 {myPortalLinks.map(link => renderLink(link))}
             </SidebarGroup>
             
-            {session.role !== 'employee' && (
+            {session && session.role !== 'employee' && (
               <>
                 <SidebarSeparator className="my-2"/>
                 <SidebarGroup>
