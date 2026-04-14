@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(xargs -r kill -9)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 37704 /F)",
+      "Bash(powershell -Command \"Stop-Process -Id 37704 -Force -ErrorAction SilentlyContinue; Write-Host 'Process stopped'\")",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

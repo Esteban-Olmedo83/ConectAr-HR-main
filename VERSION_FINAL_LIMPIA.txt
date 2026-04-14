@@ -1,0 +1,4 @@
+﻿VERSION_FINAL_LIMPIA=true
+fecha=2026-04-14
+origen=ConectAr-HR workspace
+nota=sin app mock; login real en src/app/(auth)/login

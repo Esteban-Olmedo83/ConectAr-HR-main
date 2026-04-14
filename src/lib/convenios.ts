@@ -1,0 +1,18 @@
+export const conveniosList = [
+    'Fuera de Convenio',
+    '130/75 - Empleados de Comercio',
+    '76/75 - Obreros de la Construcción',
+    '260/75 - Metalúrgicos (UOM)',
+    '40/89 - Camioneros',
+    '244/94 - Mecánicos (SMATA)',
+    '151/75 - Gastronómicos',
+    '108/75 - Sanidad',
+    '56/75 - Alimentación',
+    '132/90 - Pasteleros',
+    '120/75 - Personal de Farmacia',
+    '659/13 - Maestranza',
+    '462/73 - Plásticos',
+    '122/75 - Madereros',
+    '389/04 - Gráficos',
+    '507/07 - Seguridad Privada',
+];

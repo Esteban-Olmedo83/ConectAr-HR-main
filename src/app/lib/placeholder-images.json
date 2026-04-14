@@ -1,0 +1,9 @@
+
+{
+  "employees": {
+    "avatar": "https://picsum.photos/seed/1/200/200"
+  },
+  "dashboard": {
+    "empty": "https://picsum.photos/seed/2/400/300"
+  }
+}
