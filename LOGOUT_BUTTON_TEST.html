@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Botón Logout</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #3f6ff0;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #3f6ff0;
+            border-radius: 4px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #3f6ff0;
+            font-size: 1.1em;
+        }
+        .code {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        button {
+            background: linear-gradient(90deg, #3f6ff0 0%, #4979f5 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        button:hover {
+            filter: brightness(1.05);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .console {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .console-log { color: #0f0; }
+        .console-warn { color: #ff0; }
+        .console-error { color: #f00; }
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        .timestamp {
+            color: #999;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test de Botón Logout</h1>
+
+        <div class="section success">
+            <h2>✅ Qué Está Pasando</h2>
+            <p>He mejorado el sistema de logout con logging exhaustivo. Ahora cada paso está documentado y visible en la consola del navegador.</p>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Cómo Verificar que el Botón Funciona</h2>
+            <ol>
+                <li><strong>Login</strong>: Accede a <code>https://connect-ar-hr-main.vercel.app/</code> con owner@conectar.com</li>
+                <li><strong>Abre DevTools</strong>: Presiona <code>F12</code> y ve a la pestaña <code>Console</code></li>
+                <li><strong>Busca el botón</strong>:
+                    <ul>
+                        <li><strong>Sidebar</strong>: Esquina inferior izquierda (ícono LogOut)</li>
+                        <li><strong>Dropdown</strong>: Esquina superior derecha > click en avatar > "Cerrar Sesión"</li>
+                    </ul>
+                </li>
+                <li><strong>Click en el botón</strong> y observa los logs</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>📊 Logs que Deberías Ver</h2>
+            <div class="code">
+[AppShell] Iniciando logout...
+[AppShell] Limpiando sessionStorage...
+[AppShell] SessionStorage limpiado
+[AppShell] Llamando API logout...
+[AppShell] Logout API retornó status: 200
+[AppShell] Logout API exitosa: { success: true... }
+[AppShell] Esperando 100ms antes de redirigir...
+[AppShell] Redirigiendo a /login...
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔗 Verificaciones en Network Tab</h2>
+            <ol>
+                <li>Abre DevTools → <code>Network</code> tab</li>
+                <li>Haz click en Logout</li>
+                <li>Busca la solicitud POST a <code>/api/auth/logout</code></li>
+                <li>Verifica:
+                    <ul>
+                        <li>Status: <code>200</code> ✅</li>
+                        <li>Response: <code>{"success": true, "redirect": "/login"}</code></li>
+                        <li>Headers: Cookie <code>conectar_session</code> se debe eliminar</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>🚨 Si Algo Falla</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background: #f0f0f0;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;"><strong>Síntoma</strong></th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;"><strong>Probable Causa</strong></th>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Sin log "[AppShell] Iniciando logout..."</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Botón no clickeado o handler no registrado</td>
+                </tr>
+                <tr style="background: #f9f9f9;">
+                    <td style="padding: 10px; border: 1px solid #ddd;">Logs se detienen en "Llamando API logout..."</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Servidor no responde (timeout)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Status 500 en logout API</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Error al decodificar sesión</td>
+                </tr>
+                <tr style="background: #f9f9f9;">
+                    <td style="padding: 10px; border: 1px solid #ddd;">Error "Error en logout:..."</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Excepción en el cliente (revisa stack trace)</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section warning">
+            <h2>⚠️ Nota sobre Cookies</h2>
+            <p>Si ves un error sobre cookies en navegadores de incógnito/privado, es normal. Para testing completo, usa una ventana normal del navegador.</p>
+        </div>
+
+        <div class="section">
+            <h2>📋 Mejoras Implementadas</h2>
+            <ul>
+                <li><strong>Client-side (app-shell.tsx)</strong>:
+                    <ul>
+                        <li>Logging detallado de cada paso del logout</li>
+                        <li>Timeout de 5 segundos para API call</li>
+                        <li>Error handling completo con stack traces</li>
+                        <li>Response parsing con fallback</li>
+                    </ul>
+                </li>
+                <li><strong>Server-side (logout/route.ts)</strong>:
+                    <ul>
+                        <li>Logging de recepción de solicitud</li>
+                        <li>Verificación de sesión y decodificación Base64</li>
+                        <li>Logging de eliminación de cookie</li>
+                        <li>Error details en response</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Próximo Paso</h2>
+            <p>
+                Una vez verifiques que los logs aparecen correctamente en consola y que la solicitud POST se hace con status 200,
+                el logout debería estar completamente funcional. Si aún hay problemas, los logs detallados nos ayudarán a identificar
+                exactamente dónde está el problema.
+            </p>
+        </div>
+
+        <div class="section success">
+            <h2>✨ Espera</h2>
+            <p>El deploy en Vercel debería estar completado en ~1-2 minutos. Refresh la página si no ves los cambios inmediatamente.</p>
+        </div>
+    </div>
+
+    <script>
+        // Este script es solo para referencia visual
+        console.log('%c🚀 Logout Testing Guide Loaded', 'color: #3f6ff0; font-weight: bold; font-size: 14px');
+        console.log('Para probar el logout:');
+        console.log('1. Abre https://connect-ar-hr-main.vercel.app/');
+        console.log('2. Login con owner@conectar.com');
+        console.log('3. Abre esta consola (F12)');
+        console.log('4. Haz click en "Cerrar Sesión"');
+        console.log('5. Observa los logs [AppShell] ...');
+    </script>
+</body>
+</html>
