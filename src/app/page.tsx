@@ -1,34 +1,29 @@
-
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getSession } from '@/lib/session';
+import { redirect } from 'next/navigation';
+import { parseSessionCookie } from '@/lib/session';
+import { cookies } from 'next/headers';
 
 /**
  * ORQUESTADOR DE ENTRADA CANÓNICO (Raíz única)
- * Gestiona el flujo inicial de usuario evitando colisiones de rutas paralelas.
+ * Server-side redirect para evitar 404 en Vercel
  */
-export default function RootPage() {
-  const router = useRouter();
+export default async function RootPage() {
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('conectar_session');
+    const session = sessionCookie?.value ? parseSessionCookie(sessionCookie.value) : null;
 
-  useEffect(() => {
-    const session = getSession();
-    if (!session || session.role === 'guest') {
-      router.replace('/login');
+    if (!session) {
+      redirect('/login');
+    } else if (session.role === 'owner') {
+      redirect('/owner/dashboard');
     } else {
-      router.replace('/dashboard');
+      redirect('/dashboard');
     }
-  }, [router]);
+  } catch {
+    // Si hay error, redirigir a login de forma segura
+    redirect('/login');
+  }
 
-  return (
-    <div className="flex h-screen w-full items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        <p className="text-sm font-semibold text-slate-500 animate-pulse font-headline uppercase tracking-widest">
-          Iniciando ConectAr RRHH...
-        </p>
-      </div>
-    </div>
-  );
+  // Esto nunca se ejecutará porque redirect arriba
+  return null;
 }
