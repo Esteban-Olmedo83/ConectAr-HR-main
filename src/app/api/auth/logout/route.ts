@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logEvent } from '@/lib/audit-log';
 
 /**
  * @fileOverview API Route de Logout — ConectAr HR
@@ -26,7 +25,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    logEvent('LOGOUT', `Cierre de sesión: ${userName}`, userId, userName);
+    // Log: Usuario cerró sesión
+    console.log('[Logout] Usuario cerró sesión:', { userId, userName });
 
     // Crear respuesta de redirección
     const response = NextResponse.json({
@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[Logout API] Error:', error);
-    logEvent('LOGOUT_ERROR', `Error en logout: ${error}`);
     return NextResponse.json(
       { error: 'Error al cerrar sesión' },
       { status: 500 }
