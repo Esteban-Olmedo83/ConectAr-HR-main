@@ -157,7 +157,7 @@ function findUserByEmail(email: string) {
     'gerente@empresa.com': { userId: '0', userName: 'Directorio General', role: 'manager', isManager: true },
     'manager@empresa.com': { userId: '4', userName: 'Asesor Fiscal', role: 'manager', isManager: true },
     'empleado@empresa.com': { userId: '1', userName: 'Empleado Albaranes', role: 'employee', isManager: false },
-    'owner@conectar.com': { userId: 'owner-1', userName: 'ConectAr Propietario', role: 'owner', isManager: false },
+    'eolmedo@conectarhr.net': { userId: 'owner-1', userName: 'Esteban Olmedo', role: 'owner', isManager: false },
   };
   return users[email];
 }
