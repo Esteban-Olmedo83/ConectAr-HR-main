@@ -11,7 +11,10 @@
       "Bash(cat)",
       "Bash(chmod +x /tmp/test_deployment.sh)",
       "Bash(bash /tmp/test_deployment.sh)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(npm run:*)",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs kill:*)"
     ]
   }
 }

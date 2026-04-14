@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const sessionData = getSession();
-    if (sessionData.role === 'guest' || !sessionData.userId) {
+    if (!sessionData || sessionData.role === 'guest' || !sessionData.userId) {
       // Sesión inválida, limpiar y redirigir a login
       localStorage.removeItem('conectar_session');
       router.replace('/login');

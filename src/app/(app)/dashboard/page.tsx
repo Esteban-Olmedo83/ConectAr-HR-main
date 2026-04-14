@@ -49,6 +49,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const sessionData = getSession();
+    if (!sessionData) {
+      router.replace('/login');
+      return;
+    }
     if (sessionData.role === 'employee') {
       const employeeProfileUrl = `/employees?id=${sessionData.userId}`;
       router.replace(employeeProfileUrl);
