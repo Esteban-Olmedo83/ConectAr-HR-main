@@ -25,7 +25,9 @@ import {
   MessageSquare,
   Banknote,
   FileText,
-  CalendarDays
+  CalendarDays,
+  Cog,
+  Building2
 } from 'lucide-react';
 import { getSession } from '@/lib/session';
 import { Badge } from '@/components/ui/badge';
@@ -102,7 +104,27 @@ export function MainNav() {
                 {myPortalLinks.map(link => renderLink(link))}
             </SidebarGroup>
             
-            {session && session.role !== 'employee' && (
+            {session && session.role === 'owner' && (
+              <>
+                <SidebarSeparator className="my-2"/>
+                <SidebarGroup>
+                    <SidebarGroupLabel>PROPIETARIO</SidebarGroupLabel>
+                    <SidebarMenuItem>
+                      <Link href="/owner/system-dev" onClick={handleLinkClick}>
+                        <SidebarMenuButton
+                          isActive={pathname.startsWith('/owner/system-dev')}
+                          tooltip={{ children: 'Sistema y Desarrollo' }}
+                        >
+                          <Cog className="h-4 w-4" />
+                          <span>Sistema y Desarrollo</span>
+                        </SidebarMenuButton>
+                      </Link>
+                    </SidebarMenuItem>
+                </SidebarGroup>
+              </>
+            )}
+
+            {session && session.role !== 'employee' && session.role !== 'owner' && (
               <>
                 <SidebarSeparator className="my-2"/>
                 <SidebarGroup>
