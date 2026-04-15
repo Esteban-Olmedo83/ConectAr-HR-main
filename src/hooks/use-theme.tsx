@@ -1,88 +1,76 @@
-
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-type Theme = 'zinc' | 'rose' | 'blue' | 'green' | 'orange' | 'violet';
-type Mode = 'light' | 'dark' | 'matrix';
+export type VisualTheme = 'clasico' | 'dark' | 'purpura' | 'esmeralda' | 'sunset';
+
+const ALL_THEME_CLASSES: VisualTheme[] = ['clasico', 'dark', 'purpura', 'esmeralda', 'sunset'];
+
+const STORAGE_KEY = 'conectar-visual-theme';
+
+interface ThemeContextType {
+  theme: VisualTheme;
+  setTheme: (theme: VisualTheme) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType>({
+  theme: 'clasico',
+  setTheme: () => null,
+});
 
 interface ThemeProviderProps {
   children: ReactNode;
-  defaultTheme?: Theme;
-  defaultMode?: Mode;
-  storageKey?: string;
 }
 
-interface ThemeProviderState {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  mode: Mode;
-  setMode: (mode: Mode) => void;
-}
-
-const initialState: ThemeProviderState = {
-  theme: 'blue',
-  setTheme: () => null,
-  mode: 'light',
-  setMode: () => null,
-};
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
-
-export function ThemeProvider({
-  children,
-  defaultTheme = 'blue',
-  defaultMode = 'light',
-  storageKey = 'conectar-ui-theme-v2',
-}: ThemeProviderProps) {
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const [theme, setThemeState] = useState<VisualTheme>('clasico');
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [mode, setMode] = useState<Mode>(defaultMode);
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const [sMode, sTheme] = saved.split(':');
-      setMode(sMode as Mode || defaultMode);
-      setTheme(sTheme as Theme || defaultTheme);
+    const saved = localStorage.getItem(STORAGE_KEY) as VisualTheme | null;
+    if (saved && ALL_THEME_CLASSES.includes(saved)) {
+      setThemeState(saved);
     }
     setMounted(true);
-  }, [storageKey, defaultMode, defaultTheme]);
+  }, []);
 
   useEffect(() => {
     if (!mounted) return;
+
     const root = window.document.documentElement;
 
-    // Manage modes
-    root.classList.remove('light', 'dark', 'matrix');
-    root.classList.add(mode);
-
-    // Manage themes
-    ['zinc', 'rose', 'blue', 'green', 'orange', 'violet'].forEach(color => {
-      root.classList.remove(`theme-${color}`);
+    // Remove all theme classes and dark mode class
+    ALL_THEME_CLASSES.forEach(t => {
+      root.classList.remove(`theme-${t}`);
     });
+    root.classList.remove('dark');
+
+    // Apply new theme class
     root.classList.add(`theme-${theme}`);
 
-    localStorage.setItem(storageKey, `${mode}:${theme}`);
-  }, [theme, mode, storageKey, mounted]);
+    // If dark theme, also add tailwind dark: prefix support
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    }
 
-  const value = {
-    theme,
-    setTheme,
-    mode,
-    setMode,
+    localStorage.setItem(STORAGE_KEY, theme);
+  }, [theme, mounted]);
+
+  const setTheme = (newTheme: VisualTheme) => {
+    setThemeState(newTheme);
   };
 
   return (
-    <ThemeProviderContext.Provider value={value}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
-    </ThemeProviderContext.Provider>
+    </ThemeContext.Provider>
   );
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
-  if (context === undefined)
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider');
+  }
   return context;
 };

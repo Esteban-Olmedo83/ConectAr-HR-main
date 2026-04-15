@@ -16,23 +16,67 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, Settings, User, Bell, Search, ChevronDown, Menu } from 'lucide-react';
+import { LogOut, Settings, User, Bell, Search, ChevronDown, Menu, Palette } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getSession, logout, Session } from '@/lib/session';
 import { mockEmployees } from '@/lib/mock-data';
 import { MainNav } from '@/components/main-nav';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useSessionValidation } from '@/hooks/useSessionValidation';
+import { useTheme, VisualTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/hooks/use-locale';
 
 // Logo desde public folder
 const LOGO_WORDMARK_SRC = '/logotipo-conectar-transparent.png';
 const LOGO_ICON_SRC = '/marca-conectar-transparent.png';
+
+const THEME_CYCLE: VisualTheme[] = ['clasico', 'dark', 'purpura', 'esmeralda', 'sunset'];
+
+function LanguageToggle() {
+  const { locale, setLocale } = useLocale();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+      title={locale === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+      className="text-muted-foreground hover:text-foreground"
+    >
+      <span className="text-base" role="img" aria-label={locale === 'es' ? 'Argentina flag' : 'US flag'}>
+        {locale === 'es' ? '🇦🇷' : '🇺🇸'}
+      </span>
+    </Button>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+
+  const cycleTheme = () => {
+    const currentIndex = THEME_CYCLE.indexOf(theme);
+    const nextIndex = (currentIndex + 1) % THEME_CYCLE.length;
+    setTheme(THEME_CYCLE[nextIndex]);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={cycleTheme}
+      title={`Cambiar tema (actual: ${theme})`}
+      className="text-muted-foreground hover:text-foreground"
+    >
+      <Palette className="h-5 w-5" />
+    </Button>
+  );
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useLocale();
 
   // Validate local session state every 30 s; redirect to /login on desync
   useSessionValidation();
@@ -61,7 +105,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           <p className="text-sm font-medium text-muted-foreground animate-pulse">
-            Cargando sesión...
+            {t.common.loading}
           </p>
         </div>
       </div>
@@ -122,10 +166,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   const getRoleDisplayName = () => {
-    if (session.role === 'admin') return 'Administrador';
-    if (isGeneralManager) return 'Gerente General';
-    if (session.role === 'manager') return 'Manager';
-    return 'Empleado';
+    if (session.role === 'admin') return t.common.admin;
+    if (isGeneralManager) return t.common.generalManager;
+    if (session.role === 'manager') return t.common.manager;
+    return t.common.employee;
+  };
+
+  const getPageTitle = () => {
+    if (pathname === '/dashboard') return t.nav.dashboard;
+    if (pathname === '/employees') return t.nav.employees;
+    if (pathname === '/leave') return t.nav.leave;
+    if (pathname === '/payslips') return t.nav.payslips;
+    if (pathname === '/recruitment') return t.nav.recruitment;
+    if (pathname === '/organization-chart') return t.nav.orgChart;
+    if (pathname === '/my-portal') return t.nav.myPortal;
+    return 'ConectAr';
   };
 
   return (
@@ -224,37 +279,36 @@ export function AppShell({ children }: { children: ReactNode }) {
                 />
                 <div className="min-w-0">
                   <h1 className="truncate font-headline text-xl font-bold text-foreground">
-                    {pathname === '/dashboard' && 'Dashboard'}
-                    {pathname === '/employees' && 'Empleados'}
-                    {pathname === '/leave' && 'Ausencias'}
-                    {pathname === '/payslips' && 'Nómina'}
-                    {pathname === '/recruitment' && 'Reclutamiento'}
-                    {pathname === '/organization-chart' && 'Organigrama'}
-                    {pathname === '/my-portal' && 'Mi Portal'}
-                    {!['/dashboard', '/employees', '/leave', '/payslips', '/recruitment', '/organization-chart', '/my-portal'].includes(pathname) && 'ConectAr'}
+                    {getPageTitle()}
                   </h1>
                   <p className="text-xs text-muted-foreground">
-                    Gestión humana, conectada
+                    {t.common.hrSystem}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Acciones derechas */}
-            <div className="flex items-center gap-4 pl-2">
+            <div className="flex items-center gap-2 pl-2">
               {/* Búsqueda Desktop */}
               <div className="relative hidden md:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar..."
+                  placeholder={t.common.search}
                   className="pl-9 w-64"
                 />
               </div>
 
+              {/* Language Toggle */}
+              <LanguageToggle />
+
+              {/* Theme Toggle */}
+              <ThemeToggle />
+
               {/* Notificaciones */}
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <Bell className="h-5 w-5" />
-                <span className="sr-only">Notificaciones</span>
+                <span className="sr-only">{t.common.notifications}</span>
               </Button>
 
               {/* Perfil Dropdown */}
@@ -279,16 +333,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push(`/employees?id=${session.userId}`)}>
                     <User className="mr-2 h-4 w-4" />
-                    <span>Perfil</span>
+                    <span>{t.common.profile}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/settings')}>
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Configuración</span>
+                    <span>{t.nav.settings}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Cerrar Sesión</span>
+                    <span>{t.common.logout}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

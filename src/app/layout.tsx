@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/hooks/use-theme';
+import { LocaleProvider } from '@/hooks/use-locale';
 
 export const metadata: Metadata = {
   title: 'ConectAr RRHH',
@@ -22,8 +23,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-gradient-to-br from-blue-100 via-purple-50 to-indigo-100 min-h-screen">
         <ThemeProvider>
-          {children}
-          <Toaster />
+          <LocaleProvider>
+            {children}
+            <Toaster />
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>
