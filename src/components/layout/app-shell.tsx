@@ -76,12 +76,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     console.log('[AppShell] Iniciando logout...');
 
     try {
-      // Primero, limpiar sessionStorage del lado del cliente
+      // 1. Limpiar sessionStorage del lado del cliente inmediatamente
       console.log('[AppShell] Limpiando sessionStorage...');
       logout();
       console.log('[AppShell] SessionStorage limpiado');
 
-      // Luego, llamar al API para eliminar la cookie
+      // 2. Llamar al API para eliminar la cookie HttpOnly del servidor
       console.log('[AppShell] Llamando API logout...');
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -102,23 +102,22 @@ export function AppShell({ children }: { children: ReactNode }) {
         console.log('[AppShell] Logout API exitosa:', responseData);
       }
 
-      // Agregar un pequeño delay para asegurar que la cookie se elimine
-      // completamente antes de que el router intente navegar
-      console.log('[AppShell] Esperando 150ms antes de redirigir...');
-      await new Promise(resolve => setTimeout(resolve, 150));
-
-      // Finalmente, redirigir a login
+      // 3. Hard redirect via window.location para garantizar que:
+      //    a) El browser envíe una nueva solicitud HTTP real (no client-side navigation)
+      //    b) El middleware reciba la solicitud SIN la cookie (ya eliminada por el Set-Cookie)
+      //    c) Se evita la race condition donde router.push() podría ejecutarse antes
+      //       de que el Set-Cookie del response del API sea procesado por el browser
       console.log('[AppShell] Redirigiendo a /login...');
-      router.push('/login');
+      window.location.href = '/login';
 
     } catch (error) {
       console.error('[AppShell] Error en logout:', error instanceof Error ? error.message : String(error));
       console.error('[AppShell] Stack trace:', error instanceof Error ? error.stack : 'N/A');
 
-      // Aun así redirigir a login en caso de error
+      // Fallback: aunque falle el API, forzar hard redirect para limpiar estado
       console.log('[AppShell] Forzando logout local y redirección a login');
       logout();
-      router.push('/login');
+      window.location.href = '/login';
     }
   };
 

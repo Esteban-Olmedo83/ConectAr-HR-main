@@ -20,7 +20,14 @@
       "Bash(node test-auth-endpoints.ts)",
       "Bash(chmod +x \"/e/ConectAr HR/ConectAr-HR-clone/test-api-endpoints.sh\")",
       "Bash(\"/e/ConectAr HR/ConectAr-HR-clone/test-api-endpoints.sh\")",
-      "Bash(node test-session-lifecycle.ts)"
+      "Bash(node test-session-lifecycle.ts)",
+      "Bash(node -e \"console.log\\(new Date\\(undefined\\) < new Date\\(\\)\\); console.log\\(String\\(new Date\\(undefined\\)\\)\\)\")",
+      "Bash(chmod +x /tmp/test_logout.sh)",
+      "Bash(/tmp/test_logout.sh)",
+      "Bash(chmod +x /tmp/test_sistema_dev.sh)",
+      "Bash(/tmp/test_sistema_dev.sh)",
+      "Bash(chmod +x /tmp/test_page_load.sh)",
+      "Bash(/tmp/test_page_load.sh)"
     ]
   }
 }

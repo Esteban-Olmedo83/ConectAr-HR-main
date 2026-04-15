@@ -72,11 +72,15 @@ export default function LoginPage() {
       }
 
       console.log('[Login] Autenticación exitosa, guardando sesión');
+      // Calcular expiresAt en el cliente (4 horas, igual que la cookie del servidor)
+      // Necesario para que useSessionValidation / isTokenExpired() funcionen correctamente
+      const sessionExpiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000);
       setSession({
         userId: data.user.userId,
         userName: data.user.userName,
         role: data.user.role,
         isManager: data.user.role === 'admin' || data.user.role === 'manager',
+        expiresAt: sessionExpiresAt,
       });
 
       toast({
