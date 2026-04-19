@@ -5,7 +5,7 @@ import { checkRateLimit, getClientIP, getProfile } from '@/lib/security/rate-lim
 
 // ─── Route definitions ────────────────────────────────────────────────────────
 
-const PUBLIC_ROUTES = ['/login', '/signup'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/activate'];
 const OWNER_ROUTES  = ['/owner'];
 const APP_ROUTES    = [
   '/dashboard', '/employees', '/attendance', '/leave', '/payslips',
