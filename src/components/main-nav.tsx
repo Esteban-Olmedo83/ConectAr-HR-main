@@ -20,14 +20,14 @@ import {
   LifeBuoy,
   Settings,
   Briefcase,
-  UserCircle,
   Network,
   MessageSquare,
   Banknote,
   FileText,
   CalendarDays,
   Cog,
-  Building2
+  Building2,
+  ClockIcon
 } from 'lucide-react';
 import { getSession } from '@/lib/session';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +43,7 @@ export function MainNav() {
     { href: '/dashboard', label: t.nav.dashboard, icon: LayoutDashboard },
     { href: '/communications', label: t.nav.communications, icon: MessageSquare, badge: 2 },
     { href: '/employees', label: t.nav.employees, icon: Users },
+    { href: '/attendance', label: t.nav.attendance, icon: ClockIcon },
     { href: '/leave', label: t.nav.leave, icon: CalendarOff },
     { href: '/payslips', label: t.nav.payslips, icon: Banknote },
     { href: '/development', label: t.nav.development, icon: ClipboardCheck },
@@ -54,6 +55,7 @@ export function MainNav() {
   const myPortalLinks = [
     { href: '/my-portal', label: t.nav.mySummary, icon: LayoutDashboard },
     { href: '/my-portal/my-file', label: t.nav.myFile, icon: FileText },
+    { href: '/my-portal/attendance', label: t.nav.myAttendance, icon: ClockIcon },
     { href: '/my-portal/leaves', label: t.nav.myLeaves, icon: CalendarDays },
     { href: '/my-portal/payslips', label: t.nav.myPayslips, icon: Banknote },
   ];
