@@ -3,141 +3,120 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getSession, logout } from '@/lib/session';
-import {
-  Building2, LayoutDashboard, CreditCard, LogOut, Menu, Cog,
-  Puzzle, Zap, ShieldAlert, ChevronDown, ChevronRight,
-} from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarInset,
+  SidebarTrigger,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+  SidebarSeparator,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Building2, LayoutDashboard, CreditCard, LogOut, Cog,
+  Puzzle, Zap, ShieldAlert, ChevronDown,
+} from 'lucide-react';
 
-const LOGO_SRC = '/logo-conectar-nuevo.jpg';
+const LOGO_ICON_SRC     = '/marca-conectar-transparent.png';
+const LOGO_WORDMARK_SRC = '/logotipo-conectar-transparent.png';
 
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ElementType;
-  children?: { name: string; href: string; icon: React.ElementType }[];
-}
+// ─── Nav definition ───────────────────────────────────────────────────────────
 
-const NAV_ITEMS: NavItem[] = [
-  { name: 'Dashboard',    href: '/owner/dashboard', icon: LayoutDashboard },
-  { name: 'Clientes',     href: '/owner/clients',   icon: Building2 },
-  { name: 'Facturación',  href: '/owner/billing',   icon: CreditCard },
-  {
-    name: 'Sistema y Desarrollo',
-    href: '/owner/system-dev',
-    icon: Cog,
-    children: [
-      { name: 'Módulos del Sistema', href: '/owner/system-dev/modules',  icon: Puzzle },
-      { name: 'HotFixes',            href: '/owner/system-dev/hotfixes', icon: Zap },
-      { name: 'Seguridad',           href: '/owner/system-dev/security', icon: ShieldAlert },
-    ],
-  },
+const TOP_ITEMS = [
+  { name: 'Dashboard',   href: '/owner/dashboard', icon: LayoutDashboard },
+  { name: 'Clientes',    href: '/owner/clients',   icon: Building2 },
+  { name: 'Facturación', href: '/owner/billing',   icon: CreditCard },
 ];
 
-// ─── Logo ─────────────────────────────────────────────────────────────────────
+const SYSTEM_PARENT = { name: 'Sistema y Desarrollo', href: '/owner/system-dev', icon: Cog };
+const SYSTEM_CHILDREN = [
+  { name: 'Módulos del Sistema', href: '/owner/system-dev/modules',  icon: Puzzle },
+  { name: 'HotFixes',            href: '/owner/system-dev/hotfixes', icon: Zap },
+  { name: 'Seguridad',           href: '/owner/system-dev/security', icon: ShieldAlert },
+];
 
-function ConectArLogo({ size = 'normal' }: { size?: 'small' | 'normal' | 'large' }) {
-  const sz = { small: 'w-8 h-8', normal: 'w-10 h-10', large: 'w-12 h-12' }[size];
-  return (
-    <div className="flex items-center gap-2">
-      <div className={`${sz} rounded-xl flex items-center justify-center bg-primary shadow-lg shadow-primary/20`}>
-        <span className="text-lg font-bold text-primary-foreground">C</span>
-      </div>
-      <div className="flex flex-col">
-        <h1 className="font-headline text-base font-bold leading-tight text-foreground">
-          Conect<span className="text-primary">Ar</span>
-        </h1>
-        <p className="text-[8px] uppercase tracking-widest text-muted-foreground">
-          Portal Propietario
-        </p>
-      </div>
-    </div>
-  );
-}
+// ─── Sidebar nav (inner — needs useSidebar) ───────────────────────────────────
 
-// ─── Nav tree ─────────────────────────────────────────────────────────────────
+function OwnerNav({ onNavigate }: { onNavigate: () => void }) {
+  const pathname = usePathname();
+  const { state } = useSidebar(); // 'expanded' | 'collapsed'
 
-function NavTree({ pathname }: { pathname: string }) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
-    // Auto-open groups if a child route is active
-    const init: Record<string, boolean> = {};
-    NAV_ITEMS.forEach(item => {
-      if (item.children) {
-        init[item.href] = item.children.some(c => pathname.startsWith(c.href)) ||
-          pathname.startsWith(item.href);
-      }
-    });
-    return init;
-  });
+  const isSystemActive = pathname.startsWith(SYSTEM_PARENT.href);
+  const [open, setOpen] = useState(isSystemActive);
+
+  // Keep group open when navigating to a child via link
+  useEffect(() => {
+    if (isSystemActive) setOpen(true);
+  }, [isSystemActive]);
 
   return (
-    <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-      {NAV_ITEMS.map(item => {
-        const isActive = !item.children && pathname.startsWith(item.href);
-        const isGroupActive = item.children?.some(c => pathname.startsWith(c.href));
-        const isOpen = expanded[item.href];
+    <SidebarGroup>
+      <SidebarGroupLabel>Portal Propietario</SidebarGroupLabel>
 
-        if (item.children) {
-          return (
-            <div key={item.href}>
-              <button
-                onClick={() => setExpanded(prev => ({ ...prev, [item.href]: !prev[item.href] }))}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${
-                  isGroupActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
+      <SidebarMenu>
+        {/* Top-level items */}
+        {TOP_ITEMS.map(item => (
+          <SidebarMenuItem key={item.href}>
+            <Link href={item.href} onClick={onNavigate}>
+              <SidebarMenuButton
+                isActive={pathname.startsWith(item.href)}
+                tooltip={{ children: item.name }}
               >
-                <item.icon className="h-4 w-4 flex-shrink-0" />
-                <span className="flex-1 text-left">{item.name}</span>
-                {isOpen
-                  ? <ChevronDown className="h-3.5 w-3.5" />
-                  : <ChevronRight className="h-3.5 w-3.5" />
-                }
-              </button>
-              {isOpen && (
-                <div className="ml-4 mt-1 space-y-1 border-l border-border pl-3">
-                  {item.children.map(child => {
-                    const childActive = pathname.startsWith(child.href);
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm font-medium ${
-                          childActive
-                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                        }`}
-                      >
-                        <child.icon className="h-3.5 w-3.5" />
-                        {child.name}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        }
+                <item.icon className="h-4 w-4" />
+                <span>{item.name}</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        ))}
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${
-              isActive
-                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
+        {/* Sistema y Desarrollo — collapsible group */}
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            isActive={isSystemActive}
+            tooltip={{ children: SYSTEM_PARENT.name }}
+            onClick={() => setOpen(o => !o)}
+            className="cursor-pointer"
           >
-            <item.icon className="h-4 w-4" />
-            {item.name}
-          </Link>
-        );
-      })}
-    </nav>
+            <SYSTEM_PARENT.icon className="h-4 w-4" />
+            <span>{SYSTEM_PARENT.name}</span>
+            {state === 'expanded' && (
+              <ChevronDown
+                className={`ml-auto h-3.5 w-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+              />
+            )}
+          </SidebarMenuButton>
+
+          {open && state === 'expanded' && (
+            <SidebarMenuSub>
+              {SYSTEM_CHILDREN.map(child => (
+                <SidebarMenuSubItem key={child.href}>
+                  <Link href={child.href} onClick={onNavigate}>
+                    <SidebarMenuSubButton isActive={pathname.startsWith(child.href)}>
+                      <child.icon className="h-3.5 w-3.5" />
+                      <span>{child.name}</span>
+                    </SidebarMenuSubButton>
+                  </Link>
+                </SidebarMenuSubItem>
+              ))}
+            </SidebarMenuSub>
+          )}
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarGroup>
   );
 }
 
@@ -147,6 +126,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   const router   = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [ownerName, setOwnerName]       = useState('Propietario');
 
   useEffect(() => {
     const session = getSession();
@@ -154,6 +134,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
       router.replace('/login');
     } else {
       setIsAuthorized(true);
+      setOwnerName(session.userName ?? 'Propietario');
     }
   }, [router]);
 
@@ -161,66 +142,115 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     try {
       logout();
       await fetch('/api/auth/logout', { method: 'POST' });
-    } catch {
-      // continue to login regardless
-    } finally {
-      router.push('/login');
+    } catch { /* continue */ } finally {
+      window.location.href = '/login';
     }
   };
 
-  if (!isAuthorized) return null;
+  if (!isAuthorized) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  const getPageTitle = () => {
+    if (pathname === '/owner/dashboard')            return 'Dashboard';
+    if (pathname.startsWith('/owner/clients'))      return 'Clientes';
+    if (pathname.startsWith('/owner/billing'))      return 'Facturación';
+    if (pathname.startsWith('/owner/system-dev/modules'))  return 'Módulos del Sistema';
+    if (pathname.startsWith('/owner/system-dev/hotfixes')) return 'HotFixes';
+    if (pathname.startsWith('/owner/system-dev/security')) return 'Seguridad';
+    if (pathname.startsWith('/owner/system-dev'))   return 'Sistema y Desarrollo';
+    return 'Portal Propietario';
+  };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar Desktop */}
-      <aside className="w-64 flex flex-col shadow-xl z-10 hidden md:flex border-r bg-sidebar">
-        <div className="p-4 border-b border-sidebar-border">
-          <ConectArLogo size="normal" />
-        </div>
-        <NavTree pathname={pathname} />
-        <div className="p-4 border-t border-sidebar-border">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-destructive"
-            onClick={handleLogout}
-          >
-            <LogOut className="mr-3 h-4 w-4" />
-            Cerrar Sesión
-          </Button>
-        </div>
-      </aside>
-
-      {/* Main container */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Header */}
-        <header className="flex items-center justify-between px-4 md:px-6 h-20 border-b bg-card shadow-sm">
-          <div className="flex items-center gap-4">
-            {/* Mobile menu */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0 flex flex-col">
-                <div className="p-4 border-b">
-                  <ConectArLogo size="normal" />
-                </div>
-                <NavTree pathname={pathname} />
-              </SheetContent>
-            </Sheet>
-
-            <div className="flex items-center gap-3">
-              <img
-                src={LOGO_SRC}
+    <SidebarProvider>
+      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
+      <Sidebar className="border-r border-sidebar-border bg-sidebar">
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <SidebarHeader className="border-b border-sidebar-border px-3 py-3 shrink-0">
+            <Link href="/owner/dashboard" className="flex w-full items-center justify-center py-1">
+              <Image
+                src={LOGO_ICON_SRC}
                 alt="ConectAr"
-                className="w-10 h-10 object-contain rounded-lg"
-                style={{ filter: 'drop-shadow(0 0 8px hsl(var(--primary) / 0.4))' }}
-                onError={e => { (e.target as HTMLImageElement).src = 'https://avatar.iran.liara.run/public/42'; }}
+                width={120}
+                height={120}
+                className="h-auto w-[120px] object-contain"
+                style={{
+                  filter:
+                    'drop-shadow(0 0 1.5px rgba(255,255,255,0.95)) drop-shadow(0 0 3px rgba(255,255,255,0.88)) drop-shadow(0 8px 14px rgba(53,127,220,0.38))',
+                }}
+                priority
               />
-              <div>
-                <h1 className="font-headline text-xl font-bold text-foreground">Portal Propietario</h1>
-                <p className="text-xs text-muted-foreground">Administración de la plataforma</p>
+            </Link>
+          </SidebarHeader>
+
+          {/* Navigation */}
+          <SidebarContent className="flex-1 p-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <OwnerNav onNavigate={() => {}} />
+
+            <SidebarSeparator className="my-2" />
+
+            {/* Badge propietario */}
+            <div className="px-3 py-1.5">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary/70">
+                <ShieldAlert className="h-3 w-3" />
+                Acceso Total
+              </span>
+            </div>
+          </SidebarContent>
+
+          {/* Footer — user info */}
+          <SidebarFooter className="p-4 border-t border-sidebar-border shrink-0">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-9 w-9 border border-primary/30 shrink-0">
+                <AvatarImage src="https://placehold.co/40x40.png" alt={ownerName} />
+                <AvatarFallback className="bg-primary/20 text-primary">
+                  {ownerName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate text-foreground">{ownerName}</p>
+                <p className="text-xs text-muted-foreground">Propietario</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-destructive shrink-0"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </SidebarFooter>
+        </div>
+      </Sidebar>
+
+      {/* ── Main content ─────────────────────────────────────────────────────── */}
+      <SidebarInset className="flex flex-col h-screen overflow-hidden">
+        {/* Header */}
+        <header className="flex h-16 w-full shrink-0 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <SidebarTrigger className="md:hidden -ml-1" />
+            <div className="flex min-w-0 items-center gap-3">
+              <Image
+                src={LOGO_WORDMARK_SRC}
+                alt="ConectAr"
+                width={148}
+                height={50}
+                className="h-auto w-[90px] object-contain md:w-[108px]"
+              />
+              <div className="min-w-0 hidden sm:block">
+                <h1 className="truncate font-headline text-lg font-bold text-foreground leading-tight">
+                  {getPageTitle()}
+                </h1>
+                <p className="text-xs text-muted-foreground leading-tight">
+                  Portal Propietario
+                </p>
               </div>
             </div>
           </div>
@@ -235,12 +265,15 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
           </Button>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-background">
-          <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {children}
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
+          <div className="w-full rounded-2xl border bg-card p-4 md:p-6 shadow-sm">
+            <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {children}
+            </div>
           </div>
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
