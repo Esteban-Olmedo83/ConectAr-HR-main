@@ -7,22 +7,23 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Users, MapPin, Building2, Clock, CheckCircle2, XCircle,
+  Building2, Clock, CheckCircle2, XCircle,
   AlertTriangle, Search, Edit2, Trash2, Plus, CalendarDays,
-  LogIn, LogOut, TrendingUp
+  LogIn, LogOut, TrendingUp, Home, Save, X, MapPin
 } from 'lucide-react';
 
-// ─── Datos Mock ───────────────────────────────────────────────────────────────
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface Branch {
   id: string;
   name: string;
   address: string;
   city: string;
-  lat: number;
-  lon: number;
+  lat: number | null;
+  lon: number | null;
   radius: number;
   status: 'active' | 'inactive';
+  isVirtual?: boolean;
 }
 
 interface AttendanceRecord {
@@ -39,10 +40,13 @@ interface AttendanceRecord {
   hoursWorked: number | null;
 }
 
+// ─── Datos Mock ───────────────────────────────────────────────────────────────
+
 const MOCK_BRANCHES: Branch[] = [
   { id: '1', name: 'Sede Central Buenos Aires', address: 'Av. Corrientes 1234, Piso 8', city: 'CABA', lat: -34.6037, lon: -58.3816, radius: 150, status: 'active' },
   { id: '2', name: 'Sucursal Rosario', address: 'Córdoba 1080, Piso 3', city: 'Rosario', lat: -32.9442, lon: -60.6507, radius: 100, status: 'active' },
   { id: '3', name: 'Sucursal Córdoba', address: 'Hipólito Yrigoyen 220', city: 'Córdoba', lat: -31.4135, lon: -64.1811, radius: 100, status: 'active' },
+  { id: '4', name: 'Home Office', address: 'Trabajo remoto desde domicilio', city: 'Virtual', lat: null, lon: null, radius: 0, status: 'active', isVirtual: true },
 ];
 
 const TODAY = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -56,7 +60,7 @@ const MOCK_TODAY: AttendanceRecord[] = [
   { id: '5', employeeName: 'Analía López', employeeCode: 'EMP-006', department: 'Recursos Humanos', date: TODAY_ISO, checkIn: null, checkOut: null, branch: '-', status: 'absent', lateMinutes: 0, hoursWorked: null },
   { id: '6', employeeName: 'Diego Pérez', employeeCode: 'EMP-007', department: 'Ventas', date: TODAY_ISO, checkIn: '09:05', checkOut: null, branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: null },
   { id: '7', employeeName: 'Valentina Sánchez', employeeCode: 'EMP-008', department: 'Tecnología', date: TODAY_ISO, checkIn: '08:55', checkOut: null, branch: 'Sucursal Rosario', status: 'present', lateMinutes: 0, hoursWorked: null },
-  { id: '8', employeeName: 'Ricardo Morales', employeeCode: 'EMP-009', department: 'Administración', date: TODAY_ISO, checkIn: '09:00', checkOut: null, branch: 'Sucursal Córdoba', status: 'present', lateMinutes: 0, hoursWorked: null },
+  { id: '8', employeeName: 'Ricardo Morales', employeeCode: 'EMP-009', department: 'Administración', date: TODAY_ISO, checkIn: '09:00', checkOut: null, branch: 'Home Office', status: 'present', lateMinutes: 0, hoursWorked: null },
 ];
 
 const MOCK_HISTORY: AttendanceRecord[] = [
@@ -66,8 +70,8 @@ const MOCK_HISTORY: AttendanceRecord[] = [
   { id: 'h4', employeeName: 'Analía López', employeeCode: 'EMP-006', department: 'Recursos Humanos', date: '2026-04-18', checkIn: null, checkOut: null, branch: '-', status: 'absent', lateMinutes: 0, hoursWorked: null },
   { id: 'h5', employeeName: 'Valentina Sánchez', employeeCode: 'EMP-008', department: 'Tecnología', date: '2026-04-18', checkIn: '08:50', checkOut: '17:55', branch: 'Sucursal Rosario', status: 'present', lateMinutes: 0, hoursWorked: 8.1 },
   { id: 'h6', employeeName: 'Laura Rodríguez', employeeCode: 'EMP-004', department: 'Ventas', date: '2026-04-17', checkIn: '09:02', checkOut: '18:03', branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: 8.0 },
-  { id: 'h7', employeeName: 'Diego Pérez', employeeCode: 'EMP-007', department: 'Ventas', date: '2026-04-17', checkIn: '09:00', checkOut: '17:45', branch: 'Sede Central', status: 'early_out', lateMinutes: 0, hoursWorked: 7.7 },
-  { id: 'h8', employeeName: 'Ricardo Morales', employeeCode: 'EMP-009', department: 'Administración', date: '2026-04-17', checkIn: '09:00', checkOut: '18:00', branch: 'Sucursal Córdoba', status: 'present', lateMinutes: 0, hoursWorked: 8.0 },
+  { id: 'h7', employeeName: 'Diego Pérez', employeeCode: 'EMP-007', department: 'Ventas', date: '2026-04-17', checkIn: '09:00', checkOut: '17:45', branch: 'Home Office', status: 'early_out', lateMinutes: 0, hoursWorked: 7.7 },
+  { id: 'h8', employeeName: 'Ricardo Morales', employeeCode: 'EMP-009', department: 'Administración', date: '2026-04-17', checkIn: '09:00', checkOut: '18:00', branch: 'Home Office', status: 'present', lateMinutes: 0, hoursWorked: 8.0 },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -93,6 +97,8 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const emptyForm = { name: '', address: '', city: '', lat: '', lon: '', radius: '100' };
+
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export default function AttendancePage() {
@@ -101,7 +107,8 @@ export default function AttendancePage() {
   const [branches, setBranches] = useState<Branch[]>(MOCK_BRANCHES);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [showBranchForm, setShowBranchForm] = useState(false);
-  const [newBranch, setNewBranch] = useState({ name: '', address: '', city: '', lat: '', lon: '', radius: '100' });
+  const [newBranch, setNewBranch] = useState(emptyForm);
+  const [editForm, setEditForm] = useState(emptyForm);
 
   const todayFiltered = MOCK_TODAY.filter(r =>
     r.employeeName.toLowerCase().includes(search.toLowerCase()) ||
@@ -118,84 +125,72 @@ export default function AttendancePage() {
   const absent = MOCK_TODAY.filter(r => r.status === 'absent').length;
   const total = MOCK_TODAY.length;
 
-  const handleDeleteBranch = (id: string) => {
-    setBranches(prev => prev.filter(b => b.id !== id));
-  };
+  const handleDeleteBranch = (id: string) => setBranches(prev => prev.filter(b => b.id !== id));
 
   const handleSaveBranch = () => {
-    if (!newBranch.name || !newBranch.lat || !newBranch.lon) return;
+    if (!newBranch.name) return;
     const branch: Branch = {
       id: Date.now().toString(),
       name: newBranch.name,
       address: newBranch.address,
       city: newBranch.city,
-      lat: parseFloat(newBranch.lat),
-      lon: parseFloat(newBranch.lon),
+      lat: newBranch.lat ? parseFloat(newBranch.lat) : null,
+      lon: newBranch.lon ? parseFloat(newBranch.lon) : null,
       radius: parseInt(newBranch.radius) || 100,
       status: 'active',
+      isVirtual: !newBranch.lat && !newBranch.lon,
     };
     setBranches(prev => [...prev, branch]);
-    setNewBranch({ name: '', address: '', city: '', lat: '', lon: '', radius: '100' });
+    setNewBranch(emptyForm);
     setShowBranchForm(false);
+  };
+
+  const handleStartEdit = (branch: Branch) => {
+    setEditingBranch(branch);
+    setEditForm({
+      name: branch.name,
+      address: branch.address,
+      city: branch.city,
+      lat: branch.lat !== null ? String(branch.lat) : '',
+      lon: branch.lon !== null ? String(branch.lon) : '',
+      radius: String(branch.radius),
+    });
+    setShowBranchForm(false);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingBranch || !editForm.name) return;
+    setBranches(prev => prev.map(b =>
+      b.id === editingBranch.id
+        ? { ...b, name: editForm.name, address: editForm.address, city: editForm.city, lat: editForm.lat ? parseFloat(editForm.lat) : null, lon: editForm.lon ? parseFloat(editForm.lon) : null, radius: parseInt(editForm.radius) || 100 }
+        : b
+    ));
+    setEditingBranch(null);
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-headline">Gestión de Asistencia</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Control de fichajes, historial por empleado y configuración de sucursales.
-        </p>
+        <p className="text-muted-foreground text-sm mt-1">Control de fichajes, historial por empleado y configuración de sucursales.</p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30"><CheckCircle2 className="h-5 w-5 text-green-600" /></div>
-            <div><p className="text-xs text-muted-foreground">Presentes</p><p className="text-2xl font-bold">{present}</p></div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30"><AlertTriangle className="h-5 w-5 text-yellow-600" /></div>
-            <div><p className="text-xs text-muted-foreground">Con retraso</p><p className="text-2xl font-bold">{late}</p></div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30"><XCircle className="h-5 w-5 text-red-600" /></div>
-            <div><p className="text-xs text-muted-foreground">Ausentes</p><p className="text-2xl font-bold">{absent}</p></div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="h-5 w-5 text-primary" /></div>
-            <div><p className="text-xs text-muted-foreground">Asistencia</p><p className="text-2xl font-bold">{Math.round(((present + late) / total) * 100)}%</p></div>
-          </div>
-        </Card>
+        <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30"><CheckCircle2 className="h-5 w-5 text-green-600" /></div><div><p className="text-xs text-muted-foreground">Presentes</p><p className="text-2xl font-bold">{present}</p></div></div></Card>
+        <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30"><AlertTriangle className="h-5 w-5 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Con retraso</p><p className="text-2xl font-bold">{late}</p></div></div></Card>
+        <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30"><XCircle className="h-5 w-5 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Ausentes</p><p className="text-2xl font-bold">{absent}</p></div></div></Card>
+        <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="h-5 w-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Asistencia</p><p className="text-2xl font-bold">{Math.round(((present + late) / total) * 100)}%</p></div></div></Card>
       </div>
 
       <Tabs defaultValue="today">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="today" className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4" />
-            <span className="hidden sm:inline">Fichajes de Hoy</span>
-            <span className="sm:hidden">Hoy</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Historial</span>
-            <span className="sm:hidden">Historial</span>
-          </TabsTrigger>
-          <TabsTrigger value="branches" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Sucursales</span>
-            <span className="sm:hidden">Sucursales</span>
-          </TabsTrigger>
+          <TabsTrigger value="today" className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /><span className="hidden sm:inline">Fichajes de Hoy</span><span className="sm:hidden">Hoy</span></TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2"><Clock className="h-4 w-4" /><span>Historial</span></TabsTrigger>
+          <TabsTrigger value="branches" className="flex items-center gap-2"><Building2 className="h-4 w-4" /><span>Sucursales</span></TabsTrigger>
         </TabsList>
 
-        {/* TAB 1: Fichajes de hoy */}
+        {/* TAB 1 */}
         <TabsContent value="today" className="space-y-4 mt-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <p className="text-sm text-muted-foreground font-medium">{TODAY} — {total} empleados</p>
@@ -207,48 +202,25 @@ export default function AttendancePage() {
           <Card>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Empleado</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground hidden md:table-cell">Área</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Entrada</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground hidden sm:table-cell">Sucursal</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Estado</th>
-                  </tr>
-                </thead>
+                <thead><tr className="border-b bg-muted/30"><th className="text-left p-3 font-semibold text-muted-foreground">Empleado</th><th className="text-left p-3 font-semibold text-muted-foreground hidden md:table-cell">Área</th><th className="text-left p-3 font-semibold text-muted-foreground">Entrada</th><th className="text-left p-3 font-semibold text-muted-foreground hidden sm:table-cell">Sucursal</th><th className="text-left p-3 font-semibold text-muted-foreground">Estado</th></tr></thead>
                 <tbody>
                   {todayFiltered.map(r => (
                     <tr key={r.id} className="border-b hover:bg-muted/20 transition-colors">
-                      <td className="p-3">
-                        <p className="font-medium">{r.employeeName}</p>
-                        <p className="text-xs text-muted-foreground">{r.employeeCode}</p>
-                      </td>
+                      <td className="p-3"><p className="font-medium">{r.employeeName}</p><p className="text-xs text-muted-foreground">{r.employeeCode}</p></td>
                       <td className="p-3 hidden md:table-cell text-muted-foreground">{r.department}</td>
-                      <td className="p-3">
-                        {r.checkIn ? (
-                          <div className="flex items-center gap-1.5">
-                            <LogIn className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                            <span className="font-mono font-semibold">{r.checkIn}</span>
-                            {r.lateMinutes > 0 && <span className="text-xs text-yellow-600">+{r.lateMinutes}min</span>}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">Sin registro</span>
-                        )}
-                      </td>
+                      <td className="p-3">{r.checkIn ? <div className="flex items-center gap-1.5"><LogIn className="h-3.5 w-3.5 text-green-500 shrink-0" /><span className="font-mono font-semibold">{r.checkIn}</span>{r.lateMinutes > 0 && <span className="text-xs text-yellow-600">+{r.lateMinutes}min</span>}</div> : <span className="text-muted-foreground text-xs">Sin registro</span>}</td>
                       <td className="p-3 hidden sm:table-cell text-muted-foreground text-xs">{r.branch}</td>
                       <td className="p-3"><StatusBadge status={r.status} /></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {todayFiltered.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">Sin resultados para "{search}"</div>
-              )}
+              {todayFiltered.length === 0 && <div className="text-center py-8 text-muted-foreground text-sm">Sin resultados para "{search}"</div>}
             </div>
           </Card>
         </TabsContent>
 
-        {/* TAB 2: Historial */}
+        {/* TAB 2 */}
         <TabsContent value="history" className="space-y-4 mt-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <p className="text-sm text-muted-foreground font-medium">Últimos registros</p>
@@ -260,41 +232,21 @@ export default function AttendancePage() {
           <Card>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Empleado</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground hidden md:table-cell">Fecha</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Entrada</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground hidden sm:table-cell">Salida</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground hidden lg:table-cell">Hs.</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Estado</th>
-                  </tr>
-                </thead>
+                <thead><tr className="border-b bg-muted/30"><th className="text-left p-3 font-semibold text-muted-foreground">Empleado</th><th className="text-left p-3 font-semibold text-muted-foreground hidden md:table-cell">Fecha</th><th className="text-left p-3 font-semibold text-muted-foreground">Entrada</th><th className="text-left p-3 font-semibold text-muted-foreground hidden sm:table-cell">Salida</th><th className="text-left p-3 font-semibold text-muted-foreground hidden lg:table-cell">Hs.</th><th className="text-left p-3 font-semibold text-muted-foreground">Estado</th></tr></thead>
                 <tbody>
                   {historyFiltered.map(r => (
                     <tr key={r.id} className="border-b hover:bg-muted/20 transition-colors">
-                      <td className="p-3">
-                        <p className="font-medium">{r.employeeName}</p>
-                        <p className="text-xs text-muted-foreground">{r.date}</p>
-                      </td>
+                      <td className="p-3"><p className="font-medium">{r.employeeName}</p><p className="text-xs text-muted-foreground">{r.date}</p></td>
                       <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">{new Date(r.date).toLocaleDateString('es-AR', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
-                      <td className="p-3">
-                        {r.checkIn ? <span className="font-mono font-semibold">{r.checkIn}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                      </td>
-                      <td className="p-3 hidden sm:table-cell">
-                        {r.checkOut ? <span className="font-mono font-semibold">{r.checkOut}</span> : <span className="text-muted-foreground text-xs">—</span>}
-                      </td>
-                      <td className="p-3 hidden lg:table-cell text-muted-foreground">
-                        {r.hoursWorked ? `${r.hoursWorked}h` : '—'}
-                      </td>
+                      <td className="p-3">{r.checkIn ? <span className="font-mono font-semibold">{r.checkIn}</span> : <span className="text-muted-foreground text-xs">—</span>}</td>
+                      <td className="p-3 hidden sm:table-cell">{r.checkOut ? <span className="font-mono font-semibold">{r.checkOut}</span> : <span className="text-muted-foreground text-xs">—</span>}</td>
+                      <td className="p-3 hidden lg:table-cell text-muted-foreground">{r.hoursWorked ? `${r.hoursWorked}h` : '—'}</td>
                       <td className="p-3"><StatusBadge status={r.status} /></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {historyFiltered.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">Sin resultados</div>
-              )}
+              {historyFiltered.length === 0 && <div className="text-center py-8 text-muted-foreground text-sm">Sin resultados</div>}
             </div>
           </Card>
         </TabsContent>
@@ -303,95 +255,92 @@ export default function AttendancePage() {
         <TabsContent value="branches" className="space-y-4 mt-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground font-medium">{branches.length} sucursales configuradas</p>
-            <Button size="sm" onClick={() => setShowBranchForm(!showBranchForm)}>
+            <Button size="sm" onClick={() => { setShowBranchForm(!showBranchForm); setEditingBranch(null); }}>
               <Plus className="h-4 w-4 mr-2" />Nueva Sucursal
             </Button>
           </div>
 
-          {/* Formulario nueva sucursal */}
           {showBranchForm && (
             <Card className="border-primary/30">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Agregar Nueva Sucursal</CardTitle>
-                <CardDescription>Ingresá las coordenadas GPS exactas para la validación de geolocalización.</CardDescription>
+                <CardDescription>Las coordenadas GPS son opcionales — omitirlas crea una sucursal virtual (Home Office).</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">Nombre *</label>
-                    <Input placeholder="Ej: Sucursal Mendoza" value={newBranch.name} onChange={e => setNewBranch(p => ({ ...p, name: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">Ciudad</label>
-                    <Input placeholder="Ej: Mendoza" value={newBranch.city} onChange={e => setNewBranch(p => ({ ...p, city: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs font-semibold text-muted-foreground">Dirección</label>
-                    <Input placeholder="Ej: San Martín 456, Piso 2" value={newBranch.address} onChange={e => setNewBranch(p => ({ ...p, address: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">Latitud * <span className="font-normal text-muted-foreground">(ej: -34.6037)</span></label>
-                    <Input placeholder="-34.6037" value={newBranch.lat} onChange={e => setNewBranch(p => ({ ...p, lat: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">Longitud * <span className="font-normal text-muted-foreground">(ej: -58.3816)</span></label>
-                    <Input placeholder="-58.3816" value={newBranch.lon} onChange={e => setNewBranch(p => ({ ...p, lon: e.target.value }))} />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">Radio permitido (metros)</label>
-                    <Input type="number" placeholder="100" value={newBranch.radius} onChange={e => setNewBranch(p => ({ ...p, radius: e.target.value }))} />
-                  </div>
+                  <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Nombre *</label><Input placeholder="Ej: Sucursal Mendoza" value={newBranch.name} onChange={e => setNewBranch(p => ({ ...p, name: e.target.value }))} /></div>
+                  <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Ciudad</label><Input placeholder="Ej: Mendoza" value={newBranch.city} onChange={e => setNewBranch(p => ({ ...p, city: e.target.value }))} /></div>
+                  <div className="space-y-1 sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Dirección</label><Input placeholder="Ej: San Martín 456, Piso 2" value={newBranch.address} onChange={e => setNewBranch(p => ({ ...p, address: e.target.value }))} /></div>
+                  <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Latitud <span className="font-normal">(opcional)</span></label><Input placeholder="-34.6037" value={newBranch.lat} onChange={e => setNewBranch(p => ({ ...p, lat: e.target.value }))} /></div>
+                  <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Longitud <span className="font-normal">(opcional)</span></label><Input placeholder="-58.3816" value={newBranch.lon} onChange={e => setNewBranch(p => ({ ...p, lon: e.target.value }))} /></div>
+                  <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Radio (metros)</label><Input type="number" placeholder="100" value={newBranch.radius} onChange={e => setNewBranch(p => ({ ...p, radius: e.target.value }))} /></div>
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <Button onClick={handleSaveBranch} disabled={!newBranch.name || !newBranch.lat || !newBranch.lon}>Guardar Sucursal</Button>
+                  <Button onClick={handleSaveBranch} disabled={!newBranch.name}><Save className="h-4 w-4 mr-2" />Guardar</Button>
                   <Button variant="outline" onClick={() => setShowBranchForm(false)}>Cancelar</Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Listado de sucursales */}
+          {editingBranch && (
+            <Card className="border-blue-400/50 bg-blue-50/30 dark:bg-blue-950/20">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Editar: {editingBranch.name}</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingBranch(null)}><X className="h-4 w-4" /></Button>
+                </div>
+                <CardDescription>Modificá los datos de la sucursal.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Nombre *</label><Input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} /></div>
+                  <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Ciudad</label><Input value={editForm.city} onChange={e => setEditForm(p => ({ ...p, city: e.target.value }))} /></div>
+                  <div className="space-y-1 sm:col-span-2"><label className="text-xs font-semibold text-muted-foreground">Dirección</label><Input value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} /></div>
+                  {!editingBranch.isVirtual && (
+                    <>
+                      <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Latitud</label><Input value={editForm.lat} onChange={e => setEditForm(p => ({ ...p, lat: e.target.value }))} /></div>
+                      <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Longitud</label><Input value={editForm.lon} onChange={e => setEditForm(p => ({ ...p, lon: e.target.value }))} /></div>
+                      <div className="space-y-1"><label className="text-xs font-semibold text-muted-foreground">Radio (metros)</label><Input type="number" value={editForm.radius} onChange={e => setEditForm(p => ({ ...p, radius: e.target.value }))} /></div>
+                    </>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button onClick={handleSaveEdit} disabled={!editForm.name}><Save className="h-4 w-4 mr-2" />Guardar Cambios</Button>
+                  <Button variant="outline" onClick={() => setEditingBranch(null)}>Cancelar</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {branches.map(branch => (
-              <Card key={branch.id} className="relative">
+              <Card key={branch.id} className={`relative ${editingBranch?.id === branch.id ? 'ring-2 ring-blue-400' : ''}`}>
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                        <Building2 className="h-4 w-4 text-primary" />
+                      <div className={`p-2 rounded-lg shrink-0 ${branch.isVirtual ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-primary/10'}`}>
+                        {branch.isVirtual ? <Home className="h-4 w-4 text-purple-600 dark:text-purple-400" /> : <Building2 className="h-4 w-4 text-primary" />}
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-sm leading-tight truncate">{branch.name}</p>
                         <p className="text-xs text-muted-foreground truncate">{branch.city}</p>
                       </div>
                     </div>
-                    <Badge variant={branch.status === 'active' ? 'default' : 'secondary'} className="shrink-0 text-xs">
-                      {branch.status === 'active' ? 'Activa' : 'Inactiva'}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge variant={branch.status === 'active' ? 'default' : 'secondary'} className="text-xs">{branch.status === 'active' ? 'Activa' : 'Inactiva'}</Badge>
+                      {branch.isVirtual && <Badge variant="outline" className="text-xs border-purple-300 text-purple-600 dark:text-purple-400">Virtual</Badge>}
+                    </div>
                   </div>
-
                   <div className="space-y-1.5 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{branch.address}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 font-mono">
-                      <span className="text-primary font-semibold">GPS</span>
-                      <span>{branch.lat.toFixed(4)}, {branch.lon.toFixed(4)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-foreground">Radio:</span>
-                      <span>{branch.radius}m</span>
-                    </div>
+                    <div className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{branch.address}</span></div>
+                    {!branch.isVirtual && branch.lat !== null && <div className="flex items-center gap-1.5 font-mono"><span className="text-primary font-semibold">GPS</span><span>{branch.lat.toFixed(4)}, {branch.lon?.toFixed(4)}</span></div>}
+                    {!branch.isVirtual && <div className="flex items-center gap-1.5"><span className="font-semibold text-foreground">Radio:</span><span>{branch.radius}m</span></div>}
+                    {branch.isVirtual && <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400"><Home className="h-3.5 w-3.5 shrink-0" /><span>Sin validación GPS</span></div>}
                   </div>
-
                   <div className="flex gap-2 mt-3 pt-3 border-t">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditingBranch(branch)}>
-                      <Edit2 className="h-3.5 w-3.5 mr-1.5" />Editar
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBranch(branch.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleStartEdit(branch)}><Edit2 className="h-3.5 w-3.5 mr-1.5" />Editar</Button>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBranch(branch.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </CardContent>
               </Card>
@@ -402,9 +351,7 @@ export default function AttendancePage() {
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground flex items-center gap-2">
                 <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                <span>
-                  <strong>¿Cómo obtener coordenadas GPS?</strong> Buscá la dirección en Google Maps, hacé clic derecho sobre el punto exacto y copiá las coordenadas que aparecen (Latitud, Longitud).
-                </span>
+                <span><strong>¿Cómo obtener coordenadas?</strong> Buscá la dirección en Google Maps, clic derecho → copiá las coordenadas. Para Home Office no hacen falta coordenadas.</span>
               </p>
             </CardContent>
           </Card>

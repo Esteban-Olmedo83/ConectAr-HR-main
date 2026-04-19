@@ -26,7 +26,6 @@ import {
   FileText,
   CalendarDays,
   Cog,
-  Building2,
   ClockIcon
 } from 'lucide-react';
 import { getSession } from '@/lib/session';
@@ -58,6 +57,7 @@ export function MainNav() {
     { href: '/my-portal/attendance', label: t.nav.myAttendance, icon: ClockIcon },
     { href: '/my-portal/leaves', label: t.nav.myLeaves, icon: CalendarDays },
     { href: '/my-portal/payslips', label: t.nav.myPayslips, icon: Banknote },
+    { href: '/my-portal/community', label: t.nav.community, icon: MessageSquare },
   ];
 
   const accountLinks = [
@@ -78,7 +78,6 @@ export function MainNav() {
   }) => {
     if (item.adminOnly && session && session.role !== 'admin') return null;
 
-    // Si la ruta base coincide, está activo
     const isActive =
       pathname.startsWith(item.href) &&
       (item.href !== '/my-portal' || pathname === '/my-portal');
@@ -113,10 +112,12 @@ export function MainNav() {
   return (
     <nav className="flex flex-col h-full">
       <SidebarMenu className="flex-1">
-        <SidebarGroup>
-          <SidebarGroupLabel>{t.groups.myPortal}</SidebarGroupLabel>
-          {myPortalLinks.map(link => renderLink(link))}
-        </SidebarGroup>
+        {session && session.role === 'employee' && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.groups.myPortal}</SidebarGroupLabel>
+            {myPortalLinks.map(link => renderLink(link))}
+          </SidebarGroup>
+        )}
 
         {session && session.role === 'owner' && (
           <>
