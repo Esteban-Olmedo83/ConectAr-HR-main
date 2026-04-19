@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sanitizeText, sanitizeObject, hasSQLInjection, isValidEmail } from '@/lib/security/sanitize';
 import { sendClientInvitationEmail } from '@/lib/email';
+import { invitationStore, type PendingInvitation } from '@/lib/invitation-store';
 
-// ── In-memory store (replace with Supabase in production) ────────────────────
-// In production: INSERT INTO client_invitations (...) VALUES (...)
-
-export interface PendingInvitation {
-  id: string;
-  token: string;
-  companyName: string;
-  adminEmail: string;
-  plan: string;
-  modules: string[];
-  status: 'pending' | 'activated' | 'expired';
-  expiresAt: string;
-  createdAt: string;
-  activationUrl: string;
-}
-
-// Shared across requests in the same serverless instance
-export const invitationStore = new Map<string, PendingInvitation>();
+export const dynamic = 'force-dynamic';
 
 function requireOwner(request: NextRequest): boolean {
   try {
@@ -31,7 +15,6 @@ function requireOwner(request: NextRequest): boolean {
 }
 
 function generateToken(): string {
-  // 32 random bytes → hex string
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
   return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -43,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   const list = Array.from(invitationStore.values()).map(inv => ({
     ...inv,
-    token: undefined, // never expose token in list
+    token: undefined,
   }));
 
   return NextResponse.json({ invitations: list });
@@ -68,10 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
   }
 
-  const clean = sanitizeObject({
-    companyName: String(companyName),
-    plan:        String(plan),
-  });
+  const clean = sanitizeObject({ companyName: String(companyName), plan: String(plan) });
 
   if (hasSQLInjection(clean.companyName) || hasSQLInjection(clean.plan)) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
@@ -83,7 +63,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token     = generateToken();
-  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h
+  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
   const baseUrl   = process.env.NEXT_PUBLIC_APP_URL ?? 'https://conect-ar-hr-main.vercel.app';
   const activationUrl = `${baseUrl}/activate?token=${token}`;
 
@@ -100,23 +80,20 @@ export async function POST(request: NextRequest) {
     activationUrl,
   };
 
-  // Store locally + in production: INSERT INTO client_invitations
   invitationStore.set(token, invitation);
 
-  // Send invitation email
   const emailResult = await sendClientInvitationEmail({
-    to:             cleanEmail,
-    companyName:    clean.companyName,
+    to:           cleanEmail,
+    companyName:  clean.companyName,
     activationUrl,
-    expiresHours:   48,
+    expiresHours: 48,
   });
 
   return NextResponse.json({
-    success:    true,
-    id:         invitation.id,
-    expiresAt:  invitation.expiresAt,
-    emailSent:  emailResult.success,
-    // devUrl returned only in development so owner can test without email
+    success:   true,
+    id:        invitation.id,
+    expiresAt: invitation.expiresAt,
+    emailSent: emailResult.success,
     ...(emailResult.devUrl ? { devUrl: emailResult.devUrl } : {}),
   }, { status: 201 });
 }
