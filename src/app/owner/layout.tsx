@@ -51,18 +51,18 @@ const SYSTEM_CHILDREN = [
   { name: 'Seguridad',           href: '/owner/system-dev/security', icon: ShieldAlert },
 ];
 
-// App module routes — owner can preview each module from their session
+// Sandbox module routes — all inside /owner/sandbox/* so the owner layout persists
 const MODULE_ITEMS = [
-  { name: 'Dashboard',      href: '/dashboard',          icon: LayoutDashboard },
-  { name: 'Empleados',      href: '/employees',          icon: Users },
-  { name: 'Asistencia',     href: '/attendance',         icon: Clock },
-  { name: 'Licencias',      href: '/leave',              icon: CalendarOff },
-  { name: 'Recibos',        href: '/payslips',           icon: Banknote },
-  { name: 'Reclutamiento',  href: '/recruitment',        icon: Briefcase },
-  { name: 'Organigrama',    href: '/organization-chart', icon: Network },
-  { name: 'Comunicaciones', href: '/communications',     icon: MessageSquare },
-  { name: 'Portal Emp.',    href: '/my-portal',          icon: User },
-  { name: 'Comunidad',      href: '/my-portal/community',icon: Globe },
+  { name: 'Dashboard',      href: '/owner/sandbox/dashboard',          icon: LayoutDashboard },
+  { name: 'Empleados',      href: '/owner/sandbox/employees',          icon: Users },
+  { name: 'Asistencia',     href: '/owner/sandbox/attendance',         icon: Clock },
+  { name: 'Licencias',      href: '/owner/sandbox/leave',              icon: CalendarOff },
+  { name: 'Recibos',        href: '/owner/sandbox/payslips',           icon: Banknote },
+  { name: 'Reclutamiento',  href: '/owner/sandbox/recruitment',        icon: Briefcase },
+  { name: 'Organigrama',    href: '/owner/sandbox/organization-chart', icon: Network },
+  { name: 'Comunicaciones', href: '/owner/sandbox/communications',     icon: MessageSquare },
+  { name: 'Portal Emp.',    href: '/owner/sandbox/my-portal',          icon: User },
+  { name: 'Comunidad',      href: '/owner/sandbox/my-portal/community',icon: Globe },
 ];
 
 // ─── Inner nav — needs useSidebar ─────────────────────────────────────────────
@@ -218,15 +218,15 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     if (pathname.startsWith('/owner/system-dev/hotfixes'))  return 'HotFixes';
     if (pathname.startsWith('/owner/system-dev/security'))  return 'Seguridad';
     if (pathname.startsWith('/owner/system-dev'))           return 'Sistema y Desarrollo';
-    if (pathname === '/dashboard')                          return 'Dashboard (Vista)';
-    if (pathname.startsWith('/employees'))                  return 'Empleados (Vista)';
-    if (pathname.startsWith('/attendance'))                 return 'Asistencia (Vista)';
-    if (pathname.startsWith('/leave'))                      return 'Licencias (Vista)';
-    if (pathname.startsWith('/payslips'))                   return 'Recibos (Vista)';
-    if (pathname.startsWith('/recruitment'))                return 'Reclutamiento (Vista)';
-    if (pathname.startsWith('/organization-chart'))         return 'Organigrama (Vista)';
-    if (pathname.startsWith('/communications'))             return 'Comunicaciones (Vista)';
-    if (pathname.startsWith('/my-portal'))                  return 'Portal Empleado (Vista)';
+    if (pathname.startsWith('/owner/sandbox/dashboard'))          return 'Dashboard — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/employees'))          return 'Empleados — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/attendance'))         return 'Asistencia — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/leave'))              return 'Licencias — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/payslips'))           return 'Recibos — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/recruitment'))        return 'Reclutamiento — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/organization-chart')) return 'Organigrama — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/communications'))     return 'Comunicaciones — Banco de Pruebas';
+    if (pathname.startsWith('/owner/sandbox/my-portal'))          return 'Portal Empleado — Banco de Pruebas';
     return 'Portal Propietario';
   };
 
