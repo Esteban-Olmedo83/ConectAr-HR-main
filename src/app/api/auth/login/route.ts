@@ -17,11 +17,14 @@ const RATE_LIMIT_COOKIE_PREFIX = 'rate_limit_';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[API /auth/login] Solicitud recibida');
     const body = await request.json();
     const { email, password } = body;
+    console.log('[API /auth/login] Datos parseados:', { email, passwordLength: password?.length });
 
     // Validación básica de entrada
     if (!email || !password) {
+      console.warn('[API /auth/login] Validación fallida: email o password vacíos');
       return NextResponse.json(
         { error: 'Email y contraseña son requeridos' },
         { status: 400 }
@@ -90,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Login exitoso - resetear rate limit
-    console.log('[Login] Inicio de sesión exitoso:', email);
+    console.log('[API /auth/login] Inicio de sesión exitoso:', email);
 
     // Crear sesión
     const sessionData: { userId: string; userName: string; role: 'admin' | 'manager' | 'employee' | 'owner'; isManager: boolean } = {
@@ -100,9 +103,12 @@ export async function POST(request: NextRequest) {
       isManager: user.isManager,
     };
 
+    console.log('[API /auth/login] Creando cookie de sesión...');
     const sessionCookieValue = setSessionCookie(sessionData);
+    console.log('[API /auth/login] Cookie generada, longitud:', sessionCookieValue.length);
 
     // Crear respuesta con cookie HttpOnly
+    console.log('[API /auth/login] Creando respuesta JSON...');
     const response = NextResponse.json({
       success: true,
       user: {
@@ -114,6 +120,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Setear cookie de sesión HttpOnly
+    console.log('[API /auth/login] Seteando cookie de sesión...');
     response.cookies.set({
       name: 'conectar_session',
       value: sessionCookieValue,
@@ -127,12 +134,14 @@ export async function POST(request: NextRequest) {
     // Eliminar cookie de rate limit
     response.cookies.delete(`${RATE_LIMIT_COOKIE_PREFIX}${email.replace(/[^a-z0-9]/gi, '_')}`);
 
+    console.log('[API /auth/login] Retornando respuesta exitosa');
     return response;
 
   } catch (error) {
-    console.error('[Login API] Error:', error);
+    console.error('[API /auth/login] ERROR CAPTURADO:', error instanceof Error ? error.message : String(error));
+    console.error('[API /auth/login] Stack:', error instanceof Error ? error.stack : '');
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -148,7 +157,7 @@ function findUserByEmail(email: string) {
     'gerente@empresa.com': { userId: '0', userName: 'Directorio General', role: 'manager', isManager: true },
     'manager@empresa.com': { userId: '4', userName: 'Asesor Fiscal', role: 'manager', isManager: true },
     'empleado@empresa.com': { userId: '1', userName: 'Empleado Albaranes', role: 'employee', isManager: false },
-    'owner@conectar.com': { userId: 'owner-1', userName: 'ConectAr Propietario', role: 'owner', isManager: false },
+    'eolmedo@conectarhr.net': { userId: 'owner-1', userName: 'Esteban Olmedo', role: 'owner', isManager: false },
   };
   return users[email];
 }

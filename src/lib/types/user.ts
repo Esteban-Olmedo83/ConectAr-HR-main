@@ -22,13 +22,15 @@ export interface User {
 
 export interface Session {
   userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
+  userName: string;
   role: UserRole;
-  permissions: string[];
-  expiresAt: Date;
-  issuedAt: Date;
+  isManager: boolean;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  permissions?: string[];
+  expiresAt?: Date;
+  issuedAt?: Date;
 }
 
 export interface AuthPayload {

@@ -81,6 +81,10 @@ export default function EmployeeListPage() {
 
   useEffect(() => {
     const sessionData = getSession();
+    if (!sessionData) {
+      // Session not available, redirect to login will be handled by middleware
+      return;
+    }
     setSession(sessionData);
 
     const currentUser = mockEmployees.find(e => e.id === sessionData.userId);

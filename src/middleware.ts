@@ -49,9 +49,15 @@ export function middleware(request: NextRequest) {
   let sessionData: any = null;
   if (hasSession && sessionCookie) {
     try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch {
+      // La cookie está codificada en Base64, primero decodificar antes de parsear JSON
+      console.log('[Middleware] Cookie recibida, longitud:', sessionCookie.value.length);
+      const decodedValue = atob(sessionCookie.value);
+      console.log('[Middleware] Cookie decodificada desde Base64');
+      sessionData = JSON.parse(decodedValue);
+      console.log('[Middleware] Cookie parseada como JSON, role:', sessionData?.role);
+    } catch (error) {
       // Cookie corrupta, tratar como sin sesión
+      console.warn('[Middleware] Error al decodificar/parsear cookie:', error instanceof Error ? error.message : String(error));
       hasSession = false;
     }
   }

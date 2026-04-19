@@ -161,3 +161,37 @@ export class AuditLogger {
 }
 
 export const auditLogger = AuditLogger;
+
+/**
+ * Función simplificada para logging de eventos de seguridad
+ * Usada principalmente por middleware y APIs de autenticación
+ *
+ * @param eventType - Tipo de evento (LOGIN, LOGOUT, REFRESH_SESSION_ERROR, etc.)
+ * @param message - Descripción del evento
+ * @param userId - ID del usuario (opcional)
+ * @param userName - Nombre del usuario (opcional)
+ * @param level - Nivel de log ('info', 'warn', 'error')
+ */
+export function logEvent(
+  eventType: string,
+  message: string,
+  userId?: string,
+  userName?: string,
+  level: 'info' | 'warn' | 'error' = 'info'
+): void {
+  const timestamp = new Date().toISOString();
+  const prefix = `[${eventType}]`;
+  const userInfo = userId ? ` [User: ${userId}/${userName || 'unknown'}]` : '';
+  const logMessage = `${prefix}${userInfo} ${message}`;
+
+  if (level === 'error') {
+    console.error(`[${timestamp}] ${logMessage}`);
+  } else if (level === 'warn') {
+    console.warn(`[${timestamp}] ${logMessage}`);
+  } else {
+    console.log(`[${timestamp}] ${logMessage}`);
+  }
+
+  // En futuro: Enviar a servicio de auditoría centralizado
+  // ej: await sendAuditEvent({ eventType, message, userId, userName, timestamp, level });
+}

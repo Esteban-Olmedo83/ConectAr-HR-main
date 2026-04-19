@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession, logout } from '@/lib/session';
-import { Building2, LayoutDashboard, CreditCard, LogOut, Menu } from 'lucide-react';
+import { Building2, LayoutDashboard, CreditCard, LogOut, Menu, Cog } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
@@ -20,15 +20,37 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const session = getSession();
-    if (session.role !== 'owner') {
+    if (!session || session.role !== 'owner') {
       router.replace('/login');
     } else {
       setIsAuthorized(true);
     }
   }, [router]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      // Clear local session storage first
+      logout();
+
+      // Call logout API to clear server-side session
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        console.log('[OwnerLayout] Logout successful');
+      }
+
+      // Navigate to login page
+      router.push('/login');
+    } catch (error) {
+      console.error('[OwnerLayout] Error during logout:', error);
+      // Still navigate to login even if API call fails
+      router.push('/login');
+    }
   };
 
   if (!isAuthorized) {
@@ -39,6 +61,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     { name: 'Dashboard', href: '/owner/dashboard', icon: LayoutDashboard },
     { name: 'Clientes', href: '/owner/clients', icon: Building2 },
     { name: 'Facturación', href: '/owner/billing', icon: CreditCard },
+    { name: 'Sistema y Desarrollo', href: '/owner/system-dev', icon: Cog },
   ];
 
   // Componente de Logo ConectAr reusable

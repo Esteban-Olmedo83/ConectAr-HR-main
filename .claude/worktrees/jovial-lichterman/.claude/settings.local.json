@@ -6,7 +6,28 @@
       "Bash(netstat -ano)",
       "Bash(taskkill /PID 37704 /F)",
       "Bash(powershell -Command \"Stop-Process -Id 37704 -Force -ErrorAction SilentlyContinue; Write-Host 'Process stopped'\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(start https://connect-ar-hr-main.vercel.app/)",
+      "Bash(cat)",
+      "Bash(chmod +x /tmp/test_deployment.sh)",
+      "Bash(bash /tmp/test_deployment.sh)",
+      "Read(//tmp/**)",
+      "Bash(npm run:*)",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs kill:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(node test-auth-endpoints.ts)",
+      "Bash(chmod +x \"/e/ConectAr HR/ConectAr-HR-clone/test-api-endpoints.sh\")",
+      "Bash(\"/e/ConectAr HR/ConectAr-HR-clone/test-api-endpoints.sh\")",
+      "Bash(node test-session-lifecycle.ts)",
+      "Bash(node -e \"console.log\\(new Date\\(undefined\\) < new Date\\(\\)\\); console.log\\(String\\(new Date\\(undefined\\)\\)\\)\")",
+      "Bash(chmod +x /tmp/test_logout.sh)",
+      "Bash(/tmp/test_logout.sh)",
+      "Bash(chmod +x /tmp/test_sistema_dev.sh)",
+      "Bash(/tmp/test_sistema_dev.sh)",
+      "Bash(chmod +x /tmp/test_page_load.sh)",
+      "Bash(/tmp/test_page_load.sh)"
     ]
   }
 }
