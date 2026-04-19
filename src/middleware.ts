@@ -21,7 +21,7 @@ const PUBLIC_ROUTES = ['/login', '/signup'];
 const OWNER_ROUTES = ['/owner'];
 
 // Rutas de la aplicación (requieren autenticación)
-const APP_ROUTES = ['/dashboard', '/employees', '/leave', '/payslips', '/recruitment', '/organization-chart', '/my-portal'];
+const APP_ROUTES = ['/dashboard', '/employees', '/attendance', '/leave', '/payslips', '/recruitment', '/organization-chart', '/my-portal', '/communications'];
 
 // Ruta de login por defecto
 const DEFAULT_LOGIN = '/login';
