@@ -1,118 +1,165 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { SECURITY_HEADERS, buildCORSHeaders } from '@/lib/security/headers';
+import { checkRateLimit, getClientIP, getProfile } from '@/lib/security/rate-limit';
 
-/**
- * @fileOverview Middleware de Protección de Rutas — ConectAr HR
- * 
- * PROTEGE:
- *  - Rutas de aplicación contra acceso no autenticado
- *  - Rutas de owner contra roles no autorizados
- *  - Rutas de auth contra usuarios ya logueados
- * 
- * PERMITE:
- *  - /login y /signup sin autenticación
- *  - Redirección inteligente según el rol del usuario
- */
+// ─── Route definitions ────────────────────────────────────────────────────────
 
-// Rutas públicas (no requieren autenticación)
 const PUBLIC_ROUTES = ['/login', '/signup'];
+const OWNER_ROUTES  = ['/owner'];
+const APP_ROUTES    = [
+  '/dashboard', '/employees', '/attendance', '/leave', '/payslips',
+  '/recruitment', '/organization-chart', '/my-portal', '/communications',
+];
 
-// Rutas del portal Owner (solo rol 'owner')
-const OWNER_ROUTES = ['/owner'];
-
-// Rutas de la aplicación (requieren autenticación)
-const APP_ROUTES = ['/dashboard', '/employees', '/attendance', '/leave', '/payslips', '/recruitment', '/organization-chart', '/my-portal', '/communications'];
-
-// Ruta de login por defecto
 const DEFAULT_LOGIN = '/login';
 
-// Rutas de redirección por rol
 const ROLE_REDIRECTS: Record<string, string> = {
-  owner: '/owner/dashboard',
-  admin: '/dashboard',
-  manager: '/dashboard',
+  owner:    '/owner/dashboard',
+  admin:    '/dashboard',
+  manager:  '/dashboard',
   employee: '/dashboard',
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function applySecurityHeaders(response: NextResponse): NextResponse {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    if (value === '') {
+      response.headers.delete(key);
+    } else {
+      response.headers.set(key, value);
+    }
+  }
+  // Always strip server fingerprints
+  response.headers.delete('X-Powered-By');
+  response.headers.delete('Server');
+  return response;
+}
+
+function blockedResponse(retryAfterSec: number, resetAt: number): NextResponse {
+  const res = new NextResponse(
+    JSON.stringify({ error: 'Too Many Requests', retryAfter: retryAfterSec }),
+    {
+      status: 429,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  res.headers.set('Retry-After', String(retryAfterSec));
+  res.headers.set('X-RateLimit-Limit', '0');
+  res.headers.set('X-RateLimit-Remaining', '0');
+  res.headers.set('X-RateLimit-Reset', String(Math.floor(resetAt / 1000)));
+  applySecurityHeaders(res);
+  return res;
+}
+
+// ─── Session validation ───────────────────────────────────────────────────────
+
+interface SessionData {
+  role: string;
+  userId?: string;
+  tenantId?: string;
+  expiresAt?: string;
+}
+
+function parseSession(cookie: string | undefined): { valid: boolean; data: SessionData | null } {
+  if (!cookie) return { valid: false, data: null };
+  try {
+    const decoded = atob(cookie);
+    const data: SessionData = JSON.parse(decoded);
+    if (!data.role || typeof data.role !== 'string') return { valid: false, data: null };
+    return { valid: true, data };
+  } catch {
+    return { valid: false, data: null };
+  }
+}
+
+function isExpired(data: SessionData | null): boolean {
+  if (!data?.expiresAt) return true;
+  return new Date(data.expiresAt) < new Date();
+}
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const ip = getClientIP(request);
 
-  // 0. Rutas de API - permitir siempre (son manejadas internamente)
+  // ── Rate limiting ──────────────────────────────────────────────────────────
+  const profile = getProfile(pathname);
+  const rl = checkRateLimit(ip, profile);
+
+  if (!rl.allowed) {
+    return blockedResponse(rl.retryAfterSec, rl.resetAt);
+  }
+
+  // ── CORS pre-flight for API routes ─────────────────────────────────────────
   if (pathname.startsWith('/api/')) {
-    return NextResponse.next();
-  }
+    const origin = request.headers.get('origin');
 
-  // Obtener sesión desde las cookies
-  const sessionCookie = request.cookies.get('conectar_session');
-  let hasSession = !!sessionCookie;
-
-  let sessionData: any = null;
-  if (hasSession && sessionCookie) {
-    try {
-      // La cookie está codificada en Base64, primero decodificar antes de parsear JSON
-      console.log('[Middleware] Cookie recibida, longitud:', sessionCookie.value.length);
-      const decodedValue = atob(sessionCookie.value);
-      console.log('[Middleware] Cookie decodificada desde Base64');
-      sessionData = JSON.parse(decodedValue);
-      console.log('[Middleware] Cookie parseada como JSON, role:', sessionData?.role);
-    } catch (error) {
-      // Cookie corrupta, tratar como sin sesión
-      console.warn('[Middleware] Error al decodificar/parsear cookie:', error instanceof Error ? error.message : String(error));
-      hasSession = false;
+    if (request.method === 'OPTIONS') {
+      const corsRes = new NextResponse(null, { status: 204 });
+      const corsHeaders = buildCORSHeaders(origin);
+      for (const [k, v] of Object.entries(corsHeaders)) corsRes.headers.set(k, v);
+      applySecurityHeaders(corsRes);
+      return corsRes;
     }
+
+    // Let API routes handle their own auth; apply headers + CORS and continue
+    const next = NextResponse.next();
+    const corsHeaders = buildCORSHeaders(origin);
+    for (const [k, v] of Object.entries(corsHeaders)) next.headers.set(k, v);
+    next.headers.set('X-RateLimit-Limit', String(400));
+    next.headers.set('X-RateLimit-Remaining', String(rl.remaining));
+    next.headers.set('X-RateLimit-Reset', String(Math.floor(rl.resetAt / 1000)));
+    return applySecurityHeaders(next);
   }
 
-  const userRole = sessionData?.role || 'guest';
-  const isSessionExpired = sessionData?.expiresAt
-    ? new Date(sessionData.expiresAt) < new Date()
-    : true;
+  // ── Session ────────────────────────────────────────────────────────────────
+  const cookie = request.cookies.get('conectar_session')?.value;
+  const { valid, data: sessionData } = parseSession(cookie);
+  const hasSession = valid;
+  const userRole   = sessionData?.role ?? 'guest';
+  const expired    = isExpired(sessionData);
 
-  // 1. Rutas públicas - permitir acceso siempre
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
-    // Si ya tiene sesión válida, redirigir al dashboard correspondiente
-    if (hasSession && !isSessionExpired && userRole !== 'guest') {
-      const redirectPath = ROLE_REDIRECTS[userRole] || '/dashboard';
-      return NextResponse.redirect(new URL(redirectPath, request.url));
+  // ── Public routes ──────────────────────────────────────────────────────────
+  if (PUBLIC_ROUTES.some(r => pathname.startsWith(r))) {
+    if (hasSession && !expired && userRole !== 'guest') {
+      const dest = ROLE_REDIRECTS[userRole] ?? '/dashboard';
+      const res = NextResponse.redirect(new URL(dest, request.url));
+      return applySecurityHeaders(res);
     }
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
-  // 2. Rutas del Owner - solo rol 'owner'
-  if (OWNER_ROUTES.some(route => pathname.startsWith(route))) {
-    if (!hasSession || isSessionExpired || userRole !== 'owner') {
-      // No autorizado - redirigir a login con retorno
-      const loginUrl = new URL(DEFAULT_LOGIN, request.url);
-      loginUrl.searchParams.set('returnTo', pathname);
-      loginUrl.searchParams.set('error', 'unauthorized');
-      return NextResponse.redirect(loginUrl);
+  // ── Owner routes ───────────────────────────────────────────────────────────
+  if (OWNER_ROUTES.some(r => pathname.startsWith(r))) {
+    if (!hasSession || expired || userRole !== 'owner') {
+      const url = new URL(DEFAULT_LOGIN, request.url);
+      url.searchParams.set('returnTo', pathname);
+      url.searchParams.set('error', 'unauthorized');
+      return applySecurityHeaders(NextResponse.redirect(url));
     }
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
-  // 3. Rutas de la aplicación - requieren autenticación
-  if (APP_ROUTES.some(route => pathname.startsWith(route)) || pathname === '/') {
-    if (!hasSession || isSessionExpired || userRole === 'guest') {
-      // No autenticado - redirigir a login con retorno
-      const loginUrl = new URL(DEFAULT_LOGIN, request.url);
-      loginUrl.searchParams.set('returnTo', pathname);
-      loginUrl.searchParams.set('error', 'authentication_required');
-      return NextResponse.redirect(loginUrl);
+  // ── App routes (require auth) ──────────────────────────────────────────────
+  if (APP_ROUTES.some(r => pathname.startsWith(r)) || pathname === '/') {
+    if (!hasSession || expired || userRole === 'guest') {
+      const url = new URL(DEFAULT_LOGIN, request.url);
+      url.searchParams.set('returnTo', pathname);
+      url.searchParams.set('error', 'authentication_required');
+      return applySecurityHeaders(NextResponse.redirect(url));
     }
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
-  // 4. Otras rutas - permitir acceso (assets, APIs, etc.)
-  return NextResponse.next();
+  // ── Everything else ────────────────────────────────────────────────────────
+  return applySecurityHeaders(NextResponse.next());
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match todas las rutas excepto:
-     * - Archivos estáticos (/favicon.ico, /images/, etc.)
-     * - APIs (/api/*)
-     * - Next.js internals
-     */
-    '/((?!_next/static|_next/image|favicon.ico|images|assets|api/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|images|assets).*)',
   ],
 };
