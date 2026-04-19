@@ -61,8 +61,12 @@ const MODULE_ITEMS = [
   { name: 'Reclutamiento',  href: '/owner/sandbox/recruitment',        icon: Briefcase },
   { name: 'Organigrama',    href: '/owner/sandbox/organization-chart', icon: Network },
   { name: 'Comunicaciones', href: '/owner/sandbox/communications',     icon: MessageSquare },
-  { name: 'Portal Emp.',    href: '/owner/sandbox/my-portal',          icon: User },
-  { name: 'Comunidad',      href: '/owner/sandbox/my-portal/community',icon: Globe },
+  { name: 'Portal Emp.',    href: '/owner/sandbox/my-portal',                   icon: User },
+  { name: '— Mi Perfil',   href: '/owner/sandbox/my-portal/my-file',           icon: User },
+  { name: '— Asistencia',  href: '/owner/sandbox/my-portal/attendance',        icon: Clock },
+  { name: '— Licencias',   href: '/owner/sandbox/my-portal/leaves',            icon: CalendarOff },
+  { name: '— Recibos',     href: '/owner/sandbox/my-portal/payslips',          icon: Banknote },
+  { name: 'Comunidad',      href: '/owner/sandbox/my-portal/community',         icon: Globe },
 ];
 
 // ─── Inner nav — needs useSidebar ─────────────────────────────────────────────
