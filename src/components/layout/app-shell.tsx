@@ -16,9 +16,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, Settings, User, Bell, Search, ChevronDown, Menu, Palette } from 'lucide-react';
+import { LogOut, Settings, User, Bell, Search, ChevronDown, Palette } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { getSession, logout, Session } from '@/lib/session';
+import { getSession, logout, Session, sessionManager } from '@/lib/session';
 import { mockEmployees } from '@/lib/mock-data';
 import { MainNav } from '@/components/main-nav';
 import { useSessionValidation } from '@/hooks/useSessionValidation';
@@ -88,14 +88,43 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const sessionData = getSession();
-    if (!sessionData || sessionData.role === 'guest' || !sessionData.userId) {
-      // Sesión inválida, limpiar y redirigir a login
-      localStorage.removeItem('conectar_session');
-      router.replace('/login');
-    } else {
+
+    if (sessionData && sessionData.userId) {
+      // Sesión válida en sessionStorage — camino rápido
       setSession(sessionData);
       setLoading(false);
+      return;
     }
+
+    // sessionStorage vacío (refresh de página, nueva pestaña, nuevo deploy).
+    // Intentar restaurar la sesión desde la cookie HttpOnly del servidor
+    // antes de redirigir a login, para evitar el bucle:
+    //   AppShell → /login → middleware redirige a /dashboard → AppShell → …
+    fetch('/api/auth/refresh-session', { method: 'POST' })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.session) {
+            const restoredSession: Session = {
+              userId: data.session.userId,
+              userName: data.session.userName,
+              role: data.session.role,
+              isManager: data.session.role === 'admin' || data.session.role === 'manager',
+              expiresAt: new Date(data.session.expiresAt),
+            };
+            sessionManager.setSession(restoredSession);
+            setSession(restoredSession);
+            setLoading(false);
+          } else {
+            router.replace('/login');
+          }
+        } else {
+          router.replace('/login');
+        }
+      })
+      .catch(() => {
+        router.replace('/login');
+      });
   }, [router]);
 
   if (loading) {
@@ -240,9 +269,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="flex h-16 w-full shrink-0 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             {/* Trigger mobile: abre el Sidebar como Sheet. MainNav ya llama setOpenMobile(false) al navegar */}
-            <SidebarTrigger className="md:hidden -ml-1">
-              <Menu className="h-5 w-5" />
-            </SidebarTrigger>
+            <SidebarTrigger className="md:hidden -ml-1" />
 
             {/* Logo + Título */}
             <div className="flex min-w-0 items-center gap-3">
