@@ -1,8 +1,12 @@
 export type Locale = 'es' | 'en';
 
+// Recursively widens string literal types to `string` so both locales
+// satisfy the same Translation interface regardless of their literal values.
+type DeepString<T> = T extends string ? string : { [K in keyof T]: DeepString<T[K]> };
+export type Translation = DeepString<typeof translations.es>;
+
 export const translations = {
   es: {
-    // Navigation
     nav: {
       dashboard: 'Dashboard',
       employees: 'Empleados',
@@ -10,6 +14,9 @@ export const translations = {
       payslips: 'Nómina',
       development: 'Desarrollo',
       recruitment: 'Reclutamiento',
+      pipeline: 'Procesos',
+      vacancies: 'Vacantes',
+      candidates: 'Candidatos',
       orgChart: 'Organigrama',
       aiAssistant: 'Asistente IA',
       communications: 'Comunidad',
@@ -25,7 +32,6 @@ export const translations = {
       help: 'Centro de Ayuda',
       systemDev: 'Sistema y Desarrollo',
     },
-    // Settings
     settings: {
       title: 'Configuración',
       subtitle: 'Personaliza la apariencia y el idioma de la aplicación.',
@@ -41,7 +47,6 @@ export const translations = {
         sunset: 'Sunset',
       },
     },
-    // Common
     common: {
       loading: 'Cargando sesión...',
       search: 'Buscar...',
@@ -59,7 +64,6 @@ export const translations = {
       generalManager: 'Gerente General',
       employee: 'Empleado',
     },
-    // Section groups
     groups: {
       myPortal: 'MI PORTAL',
       admin: 'ADMINISTRACIÓN',
@@ -75,6 +79,9 @@ export const translations = {
       payslips: 'Payroll',
       development: 'Development',
       recruitment: 'Recruitment',
+      pipeline: 'Pipeline',
+      vacancies: 'Vacancies',
+      candidates: 'Candidates',
       orgChart: 'Org Chart',
       aiAssistant: 'AI Assistant',
       communications: 'Community',
