@@ -42,14 +42,14 @@ export async function getDashboardStats(tenantId = TENANT): Promise<DashboardSta
     db.from('recruitment_positions').select('id').eq('tenant_id', tenantId).eq('status', 'open'),
   ]);
 
-  const employees  = empRes.data  ?? [];
-  const leaves     = leaveRes.data ?? [];
-  const attendance = attRes.data  ?? [];
-  const vacancies  = vacRes.data  ?? [];
+  const employees  = (empRes.data  ?? []) as { status: string; departments?: { name: string } | null }[];
+  const leaves     = (leaveRes.data ?? []) as { status: string }[];
+  const attendance = (attRes.data  ?? []) as { status: string }[];
+  const vacancies  = (vacRes.data  ?? []) as { id: string }[];
 
   const deptMap: Record<string, number> = {};
   for (const e of employees) {
-    const dept = (e as any).departments?.name ?? 'Sin departamento';
+    const dept = e.departments?.name ?? 'Sin departamento';
     deptMap[dept] = (deptMap[dept] ?? 0) + 1;
   }
 

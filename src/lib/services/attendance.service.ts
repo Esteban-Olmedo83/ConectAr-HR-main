@@ -79,7 +79,7 @@ export async function getAttendanceStats(tenantId = TENANT) {
     .eq('tenant_id', tenantId)
     .eq('date', today);
 
-  const rows = data ?? [];
+  const rows = (data ?? []) as { status: string }[];
   return {
     present: rows.filter(r => r.status === 'present').length,
     late:    rows.filter(r => r.status === 'late').length,

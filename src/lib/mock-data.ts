@@ -1,4 +1,4 @@
-import type { Employee, Structure, Documento, TimeOffRequest, Vacancy } from './definitions';
+import type { Employee, Structure, Documento, TimeOffRequest, Vacancy, Sucursal } from './definitions';
 
 // ─── Structure ───────────────────────────────────────────────────────────────
 
@@ -26,28 +26,28 @@ export const initialStructure: Structure = {
 
 // ─── Horario helpers ─────────────────────────────────────────────────────────
 
-function diasPresencial(sucursal: string) {
-  const dia = (s: string) => ({ trabaja: true, sucursal: s, horarioEntrada: '09:00', horarioSalida: '18:00' });
-  const finde = { trabaja: false, sucursal: 'No aplica', horarioEntrada: '', horarioSalida: '' };
+function diasPresencial(sucursal: Sucursal) {
+  const dia = (s: Sucursal) => ({ trabaja: true, sucursal: s, horarioEntrada: '09:00', horarioSalida: '18:00' });
+  const finde = { trabaja: false, sucursal: 'No aplica' as Sucursal, horarioEntrada: '', horarioSalida: '' };
   return { lunes: dia(sucursal), martes: dia(sucursal), miercoles: dia(sucursal), jueves: dia(sucursal), viernes: dia(sucursal), sabado: finde, domingo: finde };
 }
 
-function diasHibrido(sucursal: string) {
-  const of = { trabaja: true, sucursal: 'Home Office', horarioEntrada: '09:00', horarioSalida: '18:00' };
+function diasHibrido(sucursal: Sucursal) {
+  const of = { trabaja: true, sucursal: 'Home Office' as Sucursal, horarioEntrada: '09:00', horarioSalida: '18:00' };
   const pr = { trabaja: true, sucursal, horarioEntrada: '09:00', horarioSalida: '18:00' };
-  const finde = { trabaja: false, sucursal: 'No aplica', horarioEntrada: '', horarioSalida: '' };
+  const finde = { trabaja: false, sucursal: 'No aplica' as Sucursal, horarioEntrada: '', horarioSalida: '' };
   return { lunes: of, martes: pr, miercoles: of, jueves: pr, viernes: of, sabado: finde, domingo: finde };
 }
 
 function diasRemoto() {
-  const of = { trabaja: true, sucursal: 'Home Office', horarioEntrada: '10:00', horarioSalida: '19:00' };
-  const finde = { trabaja: false, sucursal: 'No aplica', horarioEntrada: '', horarioSalida: '' };
+  const of = { trabaja: true, sucursal: 'Home Office' as Sucursal, horarioEntrada: '10:00', horarioSalida: '19:00' };
+  const finde = { trabaja: false, sucursal: 'No aplica' as Sucursal, horarioEntrada: '', horarioSalida: '' };
   return { lunes: of, martes: of, miercoles: of, jueves: of, viernes: of, sabado: finde, domingo: finde };
 }
 
-const SEDE_BA  = 'Sede Central Buenos Aires';
-const SEDE_ROS = 'Sucursal Rosario';
-const SEDE_COR = 'Sucursal Córdoba';
+const SEDE_BA  = 'Sucursal Principal' as Sucursal;
+const SEDE_ROS = 'Sucursal Externa' as Sucursal;
+const SEDE_COR = 'Sucursal Externa' as Sucursal;
 
 // ─── 20 Empleados ────────────────────────────────────────────────────────────
 

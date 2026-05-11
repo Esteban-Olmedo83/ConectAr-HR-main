@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,7 @@ interface AttendanceRecord {
   hoursWorked: number | null;
 }
 
-// ─── Datos Mock ───────────────────────────────────────────────────────────────
+// ─── Datos iniciales ──────────────────────────────────────────────────────────
 
 const MOCK_BRANCHES: Branch[] = [
   { id: '1', name: 'Sede Central Buenos Aires', address: 'Av. Corrientes 1234, Piso 8', city: 'CABA', lat: -34.6037, lon: -58.3816, radius: 150, status: 'active' },
@@ -50,29 +50,23 @@ const MOCK_BRANCHES: Branch[] = [
 ];
 
 const TODAY = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-const TODAY_ISO = new Date().toISOString().split('T')[0];
 
-const MOCK_TODAY: AttendanceRecord[] = [
-  { id: '1', employeeName: 'María Elena González', employeeCode: 'EMP-002', department: 'Recursos Humanos', date: TODAY_ISO, checkIn: '08:58', checkOut: null, branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: null },
-  { id: '2', employeeName: 'Juan Pablo Fernández', employeeCode: 'EMP-003', department: 'Tecnología', date: TODAY_ISO, checkIn: '09:12', checkOut: null, branch: 'Sede Central', status: 'late', lateMinutes: 12, hoursWorked: null },
-  { id: '3', employeeName: 'Laura Rodríguez', employeeCode: 'EMP-004', department: 'Ventas', date: TODAY_ISO, checkIn: '09:01', checkOut: null, branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: null },
-  { id: '4', employeeName: 'Carlos Martínez', employeeCode: 'EMP-005', department: 'Tecnología', date: TODAY_ISO, checkIn: '09:00', checkOut: null, branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: null },
-  { id: '5', employeeName: 'Analía López', employeeCode: 'EMP-006', department: 'Recursos Humanos', date: TODAY_ISO, checkIn: null, checkOut: null, branch: '-', status: 'absent', lateMinutes: 0, hoursWorked: null },
-  { id: '6', employeeName: 'Diego Pérez', employeeCode: 'EMP-007', department: 'Ventas', date: TODAY_ISO, checkIn: '09:05', checkOut: null, branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: null },
-  { id: '7', employeeName: 'Valentina Sánchez', employeeCode: 'EMP-008', department: 'Tecnología', date: TODAY_ISO, checkIn: '08:55', checkOut: null, branch: 'Sucursal Rosario', status: 'present', lateMinutes: 0, hoursWorked: null },
-  { id: '8', employeeName: 'Ricardo Morales', employeeCode: 'EMP-009', department: 'Administración', date: TODAY_ISO, checkIn: '09:00', checkOut: null, branch: 'Home Office', status: 'present', lateMinutes: 0, hoursWorked: null },
-];
-
-const MOCK_HISTORY: AttendanceRecord[] = [
-  { id: 'h1', employeeName: 'María Elena González', employeeCode: 'EMP-002', department: 'Recursos Humanos', date: '2026-04-18', checkIn: '08:58', checkOut: '18:05', branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: 8.1 },
-  { id: 'h2', employeeName: 'Juan Pablo Fernández', employeeCode: 'EMP-003', department: 'Tecnología', date: '2026-04-18', checkIn: '09:15', checkOut: '18:10', branch: 'Sede Central', status: 'late', lateMinutes: 15, hoursWorked: 7.9 },
-  { id: 'h3', employeeName: 'Carlos Martínez', employeeCode: 'EMP-005', department: 'Tecnología', date: '2026-04-18', checkIn: '09:00', checkOut: '18:00', branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: 8.0 },
-  { id: 'h4', employeeName: 'Analía López', employeeCode: 'EMP-006', department: 'Recursos Humanos', date: '2026-04-18', checkIn: null, checkOut: null, branch: '-', status: 'absent', lateMinutes: 0, hoursWorked: null },
-  { id: 'h5', employeeName: 'Valentina Sánchez', employeeCode: 'EMP-008', department: 'Tecnología', date: '2026-04-18', checkIn: '08:50', checkOut: '17:55', branch: 'Sucursal Rosario', status: 'present', lateMinutes: 0, hoursWorked: 8.1 },
-  { id: 'h6', employeeName: 'Laura Rodríguez', employeeCode: 'EMP-004', department: 'Ventas', date: '2026-04-17', checkIn: '09:02', checkOut: '18:03', branch: 'Sede Central', status: 'present', lateMinutes: 0, hoursWorked: 8.0 },
-  { id: 'h7', employeeName: 'Diego Pérez', employeeCode: 'EMP-007', department: 'Ventas', date: '2026-04-17', checkIn: '09:00', checkOut: '17:45', branch: 'Home Office', status: 'early_out', lateMinutes: 0, hoursWorked: 7.7 },
-  { id: 'h8', employeeName: 'Ricardo Morales', employeeCode: 'EMP-009', department: 'Administración', date: '2026-04-17', checkIn: '09:00', checkOut: '18:00', branch: 'Home Office', status: 'present', lateMinutes: 0, hoursWorked: 8.0 },
-];
+function apiToRecord(r: any): AttendanceRecord {
+  const toTime = (iso: string | null) => iso ? iso.slice(11, 16) : null;
+  return {
+    id: r.id,
+    employeeName: r.employees ? `${r.employees.first_name} ${r.employees.last_name}` : r.employee_id,
+    employeeCode: r.employees?.employee_code ?? r.employee_id,
+    department: r.employees?.departments?.name ?? '',
+    date: r.date,
+    checkIn: toTime(r.check_in_time),
+    checkOut: toTime(r.check_out_time),
+    branch: 'Sede Central',
+    status: r.status as AttendanceRecord['status'],
+    lateMinutes: r.late_minutes ?? 0,
+    hoursWorked: r.working_hours ?? null,
+  };
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -109,21 +103,34 @@ export default function AttendancePage() {
   const [showBranchForm, setShowBranchForm] = useState(false);
   const [newBranch, setNewBranch] = useState(emptyForm);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
+  const [historyRecords, setHistoryRecords] = useState<AttendanceRecord[]>([]);
 
-  const todayFiltered = MOCK_TODAY.filter(r =>
+  useEffect(() => {
+    fetch('/api/attendance?view=today')
+      .then(r => r.json())
+      .then(d => setTodayRecords((d.records ?? []).map(apiToRecord)))
+      .catch(() => null);
+    fetch('/api/attendance?view=history')
+      .then(r => r.json())
+      .then(d => setHistoryRecords((d.records ?? []).map(apiToRecord)))
+      .catch(() => null);
+  }, []);
+
+  const todayFiltered = todayRecords.filter(r =>
     r.employeeName.toLowerCase().includes(search.toLowerCase()) ||
     r.department.toLowerCase().includes(search.toLowerCase())
   );
 
-  const historyFiltered = MOCK_HISTORY.filter(r =>
+  const historyFiltered = historyRecords.filter(r =>
     r.employeeName.toLowerCase().includes(historySearch.toLowerCase()) ||
     r.department.toLowerCase().includes(historySearch.toLowerCase())
   );
 
-  const present = MOCK_TODAY.filter(r => r.status === 'present').length;
-  const late = MOCK_TODAY.filter(r => r.status === 'late').length;
-  const absent = MOCK_TODAY.filter(r => r.status === 'absent').length;
-  const total = MOCK_TODAY.length;
+  const present = todayRecords.filter(r => r.status === 'present').length;
+  const late = todayRecords.filter(r => r.status === 'late').length;
+  const absent = todayRecords.filter(r => r.status === 'absent').length;
+  const total = todayRecords.length || 20;
 
   const handleDeleteBranch = (id: string) => setBranches(prev => prev.filter(b => b.id !== id));
 
@@ -193,7 +200,7 @@ export default function AttendancePage() {
         {/* TAB 1 */}
         <TabsContent value="today" className="space-y-4 mt-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-sm text-muted-foreground font-medium">{TODAY} — {total} empleados</p>
+            <p className="text-sm text-muted-foreground font-medium">{TODAY} — {todayRecords.length} empleados</p>
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar empleado o área..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />

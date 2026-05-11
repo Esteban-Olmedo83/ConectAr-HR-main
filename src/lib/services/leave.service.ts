@@ -45,7 +45,7 @@ export async function getLeaveStats(tenantId = TENANT) {
     .select('status')
     .eq('tenant_id', tenantId);
 
-  const rows = data ?? [];
+  const rows = (data ?? []) as { status: string }[];
   return {
     pending:  rows.filter(r => r.status === 'pending').length,
     approved: rows.filter(r => r.status === 'approved').length,
