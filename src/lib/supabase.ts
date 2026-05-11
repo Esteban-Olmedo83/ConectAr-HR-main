@@ -1,10 +1,30 @@
 /**
- * Cliente de Supabase
- * Configuración e inicialización del cliente Supabase
+ * Supabase client — browser-safe entry point.
+ * Re-exports from supabase-server for backward compatibility.
+ * Server-only features (admin client) are only accessible server-side.
  */
 
-// Este archivo será completado cuando se integre Supabase
-// Por ahora proporciona tipos y configuración básica
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? '';
+const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+export const isSupabaseConfigured =
+  supabaseUrl.length > 0 &&
+  !supabaseUrl.includes('TU_PROYECTO') &&
+  supabaseAnon.length > 0;
+
+let _client: SupabaseClient | null = null;
+
+export function getSupabaseClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured) return null;
+  if (!_client) {
+    _client = createClient(supabaseUrl, supabaseAnon, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return _client;
+}
 
 export interface SupabaseConfig {
   url: string;
@@ -13,17 +33,7 @@ export interface SupabaseConfig {
 }
 
 export const supabaseConfig: SupabaseConfig = {
-  url: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+  url: supabaseUrl,
+  anonKey: supabaseAnon,
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 };
-
-export function initSupabase(): void {
-  if (!supabaseConfig.url || !supabaseConfig.anonKey) {
-    console.warn('Advertencia: Variables de Supabase no configuradas');
-  }
-}
-
-// TODO: Implementar cliente Supabase cuando se integre
-// import { createClient } from '@supabase/supabase-js';
-// export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey);
