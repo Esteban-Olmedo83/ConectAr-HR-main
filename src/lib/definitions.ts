@@ -81,7 +81,7 @@ export type Employee = {
         sector: string;
         dependencia: string;
         horario: {
-            tipo: 'Presencial' | 'Híbrido';
+            tipo: 'Presencial' | 'Híbrido' | 'Remoto';
             dias: {
                 lunes: DiaLaboral;
                 martes: DiaLaboral;

@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Users, Activity, CalendarOff, Briefcase, ArrowUp, ArrowDown, MoreVertical, Edit } from 'lucide-react';
-import { mockEmployees, initialRequests, initialVacancies } from '@/lib/mock-data';
-import { useState, useEffect, useMemo } from 'react';
+import { mockEmployees } from '@/lib/mock-data';
+import { useState, useEffect } from 'react';
 import { getSession, Session } from '@/lib/session';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { DashboardStats } from '@/lib/services/dashboard.service';
 
 const BarChart = dynamic(() => import('@/components/employees/bar-chart'), {
     ssr: false,
@@ -45,6 +46,7 @@ const StatCard = ({ title, value, percentage, change, icon: Icon }: { title: str
 
 export default function DashboardPage() {
   const [session, setSession] = useState<Session | null>(null);
+  const [apiStats, setApiStats] = useState<DashboardStats | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -54,23 +56,27 @@ export default function DashboardPage() {
       return;
     }
     if (sessionData.role === 'employee') {
-      const employeeProfileUrl = `/employees?id=${sessionData.userId}`;
-      router.replace(employeeProfileUrl);
-    } else if (sessionData.role === 'guest') {
-        router.replace('/login');
-    }
-    else {
-        setSession(sessionData);
+      router.replace(`/employees?id=${sessionData.userId}`);
+    } else if ((sessionData.role as string) === 'guest') {
+      router.replace('/login');
+    } else {
+      setSession(sessionData);
+      fetch('/api/dashboard')
+        .then(r => r.json())
+        .then(d => setApiStats(d.stats))
+        .catch(() => null);
     }
   }, [router]);
-  
-  const stats = useMemo(() => {
-    const active = mockEmployees.filter(e => e.fechaEgreso === null).length;
-    const pendingRequests = initialRequests.filter(r => r.status === 'Pendiente').length;
-    const openVacancies = initialVacancies.filter(v => v.status !== 'Contratado').length;
-    
-    return { active, pendingRequests, openVacancies };
-  }, []);
+
+  const stats = {
+    active: apiStats?.activeEmployees ?? mockEmployees.filter(e => !e.fechaEgreso).length,
+    pendingRequests: apiStats?.pendingLeaves ?? 3,
+    openVacancies: apiStats?.openVacancies ?? 7,
+    presentToday: apiStats?.presentToday ?? 0,
+    lateToday: apiStats?.lateToday ?? 0,
+    departments: apiStats?.departments ?? [],
+    recentActivity: apiStats?.recentActivity ?? [],
+  };
 
   const salaryByUnitData = [
     { name: 'Ene', Ventas: 4500000, Sistemas: 6800000 },
@@ -99,8 +105,8 @@ export default function DashboardPage() {
       
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Headcount Activo" value={stats.active} percentage={4} change="increase" icon={Users} />
-        <StatCard title="Inversión Nómina" value="$12.4M" percentage={12} change="increase" icon={Activity} />
-        <StatCard title="Ausencias Hoy" value={stats.pendingRequests} percentage={8} change="decrease" icon={CalendarOff} />
+        <StatCard title="Presentes Hoy" value={stats.presentToday || stats.active} percentage={5} change="increase" icon={Activity} />
+        <StatCard title="Licencias Pendientes" value={stats.pendingRequests} percentage={8} change="decrease" icon={CalendarOff} />
         <StatCard title="Búsquedas Activas" value={stats.openVacancies} percentage={15} change="increase" icon={Briefcase} />
       </section>
 
@@ -125,7 +131,7 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid grid-cols-1 gap-6">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-none shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/30">
                 <div>
@@ -153,6 +159,30 @@ export default function DashboardPage() {
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.push(`/employees?id=${emp.id}`)}>
                                 <Edit className="h-3 w-3"/>
                             </Button>
+                        </div>
+                    </div>
+                  ))}
+                </div>
+            </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="border-b bg-muted/30">
+                <CardTitle className="text-lg font-headline">Actividad Reciente</CardTitle>
+                <CardDescription>Últimos movimientos del sistema</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+                <div className="divide-y">
+                  {stats.recentActivity.slice(0, 5).map(item => (
+                    <div key={item.id} className="flex items-start gap-3 p-4 hover:bg-muted/20 transition-colors">
+                        <div className={`mt-0.5 h-2 w-2 rounded-full flex-shrink-0 ${
+                          item.type === 'leave_request' ? 'bg-yellow-500' :
+                          item.type === 'new_hire'      ? 'bg-green-500' :
+                          item.type === 'payroll'       ? 'bg-blue-500' :
+                          'bg-purple-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm text-foreground">{item.description}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">hace {item.time}</p>
                         </div>
                     </div>
                   ))}
